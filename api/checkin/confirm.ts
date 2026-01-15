@@ -1,17 +1,18 @@
 import * as jwt from 'jsonwebtoken';
-import * as admin from 'firebase-admin';
+import { initializeApp, cert, getApps } from "firebase-admin/app";
+import { getFirestore, FieldValue } from "firebase-admin/firestore";
 
-if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert({
+if (!getApps().length) {
+  initializeApp({
+    credential: cert({
       projectId: process.env.FIREBASE_PROJECT_ID,
       clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-    })
+      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
+    }),
   });
 }
 
-const db = admin.firestore();
+const db = getFirestore();
 
 export default async function handler(req: any, res: any) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
@@ -33,8 +34,8 @@ export default async function handler(req: any, res: any) {
     
     await bookingRef.update({
       status: 'checked_in',
-      checkedInAt: admin.firestore.FieldValue.serverTimestamp(),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      checkedInAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
       checkedInBy: adminEmail || 'unknown_admin'
     });
 
