@@ -1,4 +1,3 @@
-
 // Initialize Firebase using the modular SDK
 import { initializeApp } from 'firebase/app';
 // Get Auth instance using the modular SDK
@@ -15,6 +14,7 @@ const firebaseConfig = {
   appId: "1:746584809132:web:ba192efb8ebac668dcc909",
 };
 
+// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);

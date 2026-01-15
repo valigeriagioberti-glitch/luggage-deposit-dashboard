@@ -1,0 +1,47 @@
+import * as jwt from 'jsonwebtoken';
+import * as admin from 'firebase-admin';
+
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.cert({
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+    })
+  });
+}
+
+const db = admin.firestore();
+
+export default async function handler(req: any, res: any) {
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
+
+  const { token, adminEmail } = req.body;
+  if (!token) return res.status(400).json({ error: 'Token is required' });
+
+  try {
+    const secret = process.env.CHECKIN_JWT_SECRET;
+    if (!secret) throw new Error('JWT Secret missing');
+
+    const decoded: any = jwt.verify(token, secret);
+    
+    if (decoded.type !== 'checkin') {
+      return res.status(400).json({ error: 'Invalid token' });
+    }
+
+    const bookingRef = db.collection('bookings').doc(decoded.bookingId);
+    
+    await bookingRef.update({
+      status: 'checked_in',
+      checkedInAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      checkedInBy: adminEmail || 'unknown_admin'
+    });
+
+    return res.status(200).json({ success: true });
+
+  } catch (err: any) {
+    console.error('Check-in Confirmation Error:', err.message);
+    return res.status(401).json({ error: 'Authorization failed.' });
+  }
+}

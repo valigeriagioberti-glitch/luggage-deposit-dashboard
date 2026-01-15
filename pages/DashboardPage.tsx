@@ -1,8 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { collection, query, orderBy, onSnapshot, Timestamp } from 'firebase/firestore';
 // Standardizing modular Firebase Auth import for signOut
 import { signOut } from 'firebase/auth';
+import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../firebase';
 import { Booking, BookingStatus } from '../types';
 import StatusBadge from '../components/StatusBadge';
@@ -11,6 +11,7 @@ import BookingDetailModal from '../components/BookingDetailModal';
 type DateFilter = 'all' | 'today' | 'upcoming' | 'past';
 
 const DashboardPage: React.FC = () => {
+  const navigate = useNavigate();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [filteredBookings, setFilteredBookings] = useState<Booking[]>([]);
   const [search, setSearch] = useState('');
@@ -131,6 +132,13 @@ const unsubscribe = onSnapshot(
             <h1 className="font-bold text-lg text-slate-900 hidden sm:block">Admin Console</h1>
           </div>
           <div className="flex items-center gap-4">
+            <button 
+              onClick={() => navigate('/scan')}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-200"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" /></svg>
+              <span>Scan QR</span>
+            </button>
             <span className="text-sm text-slate-500 font-medium hidden md:block">{auth.currentUser?.email}</span>
             <button 
               onClick={handleLogout}

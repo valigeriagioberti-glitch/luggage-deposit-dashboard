@@ -1,21 +1,21 @@
-
-/* 
-  THIS IS A SERVER-SIDE VERCEL FUNCTION TEMPLATE.
-  INSTALL: npm install stripe firebase-admin
-*/
-
 import Stripe from 'stripe';
 import * as admin from 'firebase-admin';
+import * * as jwt from 'jsonwebtoken';
 
 // Initialize Firebase Admin (Private Key from Env Var)
 if (!admin.apps.length) {
   admin.initializeApp({
-    credential: admin.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY!))
+    credential: admin.credential.cert({
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+    })
   });
 }
 
 const db = admin.firestore();
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2023-10-16' });
+// Use the exact apiVersion required by the current stripe library version
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2025-12-15.clover' });
 
 export default async function handler(req: any, res: any) {
   if (req.method !== 'POST') return res.status(405).send('Method Not Allowed');
@@ -36,7 +36,6 @@ export default async function handler(req: any, res: any) {
       const metadata = session.metadata || {};
       const bookingRef = metadata.bookingRef;
       
-      // Use bookingRef as the document ID for idempotency
       const docRef = db.collection('bookings').doc(bookingRef);
 
       const bookingData = {
@@ -72,8 +71,24 @@ export default async function handler(req: any, res: any) {
         walletIssued: false
       };
 
-      // set(..., {merge: true}) ensures idempotency
       await docRef.set(bookingData, { merge: true });
+
+      // Create Check-in Token
+      const checkinToken = jwt.sign(
+        { bookingId: bookingRef, bookingRef, type: 'checkin' },
+        process.env.CHECKIN_JWT_SECRET!,
+        { expiresIn: '30d' }
+      );
+
+      const checkinUrl = `https://dashboard.luggagedepositrome.com/#/scan?token=${checkinToken}`;
+      const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(checkinUrl)}`;
+
+      // Confirmation Logic (e.g. Resend) would use qrImageUrl and checkinUrl here.
+      console.log(`Booking ${bookingRef} created. QR: ${qrImageUrl}`);
+      
+      await docRef.update({
+        checkinTokenIssuedAt: admin.firestore.FieldValue.serverTimestamp()
+      });
     }
   }
 

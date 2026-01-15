@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 // Using explicit type import for User and standardizing modular imports
@@ -8,6 +7,7 @@ import { auth, db } from './firebase';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import UnauthorizedPage from './pages/UnauthorizedPage';
+import ScanPage from './pages/ScanPage';
 
 const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -70,6 +70,10 @@ const App: React.FC = () => {
         <Route 
           path="/" 
           element={user && isAdmin ? <DashboardPage /> : <Navigate to="/login" />} 
+        />
+        <Route 
+          path="/scan" 
+          element={user && isAdmin ? <ScanPage /> : <Navigate to="/login" />} 
         />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
