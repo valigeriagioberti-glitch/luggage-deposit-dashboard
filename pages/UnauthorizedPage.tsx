@@ -1,10 +1,12 @@
 
 import React from 'react';
+// Standardizing modular Firebase Auth import for signOut
 import { signOut } from 'firebase/auth';
 import { auth } from '../firebase';
 
 const UnauthorizedPage: React.FC = () => {
   const handleSignOut = async () => {
+    // Functional call to sign out with auth instance
     await signOut(auth);
     window.location.hash = '/login';
   };

@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { collection, query, orderBy, onSnapshot, Timestamp } from 'firebase/firestore';
+// Standardizing modular Firebase Auth import for signOut
 import { signOut } from 'firebase/auth';
 import { auth, db } from '../firebase';
 import { Booking, BookingStatus } from '../types';
@@ -17,6 +18,8 @@ const DashboardPage: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<BookingStatus | 'all'>('all');
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const logoUrl = "https://cdn.shopify.com/s/files/1/0753/8144/0861/files/cropped-Untitled-design-2025-09-11T094640.576_1.png?v=1765462614&width=160&format=webp";
 
   useEffect(() => {
     const q = query(collection(db, 'bookings'), orderBy('dropOff.datetime', 'asc'));
@@ -69,15 +72,15 @@ const DashboardPage: React.FC = () => {
       {/* Header */}
       <header className="bg-white border-b sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold">R</div>
-            <h1 className="font-bold text-xl text-slate-900 hidden sm:block">Admin Console</h1>
+          <div className="flex items-center gap-3">
+            <img src={logoUrl} alt="Logo" className="h-8 w-auto" />
+            <h1 className="font-bold text-lg text-slate-900 hidden sm:block">Admin Console</h1>
           </div>
           <div className="flex items-center gap-4">
             <span className="text-sm text-slate-500 font-medium hidden md:block">{auth.currentUser?.email}</span>
             <button 
               onClick={handleLogout}
-              className="text-sm font-semibold text-slate-600 hover:text-red-600 transition-colors"
+              className="text-sm font-semibold text-slate-600 hover:text-red-600 transition-colors px-3 py-1.5 hover:bg-red-50 rounded-lg"
             >
               Sign Out
             </button>
@@ -111,7 +114,7 @@ const DashboardPage: React.FC = () => {
 
         {/* Filters */}
         <div className="flex flex-wrap gap-2 mb-6">
-          <div className="flex bg-white p-1 rounded-xl border border-slate-200">
+          <div className="flex bg-white p-1 rounded-xl border border-slate-200 shadow-sm">
             {(['all', 'today', 'upcoming', 'past'] as const).map((f) => (
               <button
                 key={f}
@@ -123,7 +126,7 @@ const DashboardPage: React.FC = () => {
             ))}
           </div>
 
-          <div className="flex bg-white p-1 rounded-xl border border-slate-200">
+          <div className="flex bg-white p-1 rounded-xl border border-slate-200 shadow-sm">
             {(['all', 'paid', 'checked_in', 'picked_up', 'cancelled'] as const).map((s) => (
               <button
                 key={s}

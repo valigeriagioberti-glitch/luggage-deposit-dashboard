@@ -1,7 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { onAuthStateChanged, User } from 'firebase/auth';
+// Using explicit type import for User and standardizing modular imports
+import { onAuthStateChanged, type User } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from './firebase';
 import LoginPage from './pages/LoginPage';
@@ -14,6 +15,7 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Correctly call onAuthStateChanged with the auth instance
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setLoading(true);
       if (currentUser) {
