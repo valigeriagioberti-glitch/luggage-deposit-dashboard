@@ -44,6 +44,39 @@ const ScanPage: React.FC = () => {
     };
   }, [token]);
 
+  const extractToken = (input: string): string => {
+    let cleanInput = input.trim();
+    if (cleanInput.includes('token=')) {
+      try {
+        // Handle hash URLs: replace /#/ with / to allow URL searchParams to work
+        const normalized = cleanInput.replace('/#/', '/');
+        const url = new URL(normalized);
+        const param = url.searchParams.get('token');
+        if (param) return decodeURIComponent(param);
+      } catch (e) {
+        // Manual split fallback if URL parsing fails
+        const parts = cleanInput.split('token=');
+        if (parts.length > 1) {
+          return decodeURIComponent(parts[1].split('&')[0]);
+        }
+      }
+    }
+    return decodeURIComponent(cleanInput);
+  };
+
+  const validateAndProcessToken = (rawInput: string) => {
+    setError(null);
+    const extractedToken = extractToken(rawInput);
+    
+    // Validate JWT shape (three segments)
+    if (extractedToken.split('.').length !== 3) {
+      setError("Invalid token (not JWT).");
+      return;
+    }
+
+    setToken(extractedToken);
+  };
+
   const verifyToken = async (jwtToken: string) => {
     setLoading(true);
     setError(null);
@@ -53,14 +86,22 @@ const ScanPage: React.FC = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token: jwtToken }),
       });
+      
       const data = await response.json();
+      
       if (response.ok) {
         setBooking(data.booking);
       } else {
-        setError(data.error || 'Invalid or expired QR code.');
+        // Display specific error message from the API
+        setError(data.error || `Server error: ${response.status}`);
       }
-    } catch (err) {
-      setError('Connection error verifying token.');
+    } catch (err: any) {
+      // Distinguish between network errors and logic errors
+      if (err.name === 'TypeError' || err.message.includes('fetch')) {
+        setError('Connection error: Please check your internet or try again.');
+      } else {
+        setError(err.message || 'An unexpected error occurred during verification.');
+      }
     } finally {
       setLoading(false);
     }
@@ -69,16 +110,7 @@ const ScanPage: React.FC = () => {
   const handleManualSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!manualInput) return;
-    
-    // Try to extract token if full URL was pasted
-    let extracted = manualInput;
-    if (manualInput.includes('token=')) {
-      try {
-        const url = new URL(manualInput.replace('#/', ''));
-        extracted = url.searchParams.get('token') || manualInput;
-      } catch { /* use original */ }
-    }
-    setToken(extracted);
+    validateAndProcessToken(manualInput);
   };
 
   const startCamera = async () => {
@@ -92,14 +124,7 @@ const ScanPage: React.FC = () => {
         { facingMode: "environment" },
         { fps: 10, qrbox: { width: 250, height: 250 } },
         (decodedText) => {
-          let extracted = decodedText;
-          if (decodedText.includes('token=')) {
-            try {
-              const url = new URL(decodedText.replace('#/', ''));
-              extracted = url.searchParams.get('token') || decodedText;
-            } catch { /* use original */ }
-          }
-          setToken(extracted);
+          validateAndProcessToken(decodedText);
           stopCamera();
         },
         () => {} // silent scan errors
@@ -129,14 +154,16 @@ const ScanPage: React.FC = () => {
           adminEmail: auth.currentUser?.email 
         }),
       });
+      
+      const data = await response.json();
+
       if (response.ok) {
         setSuccess(true);
         setTimeout(() => navigate('/'), 2000);
       } else {
-        const data = await response.json();
         setError(data.error || 'Check-in failed.');
       }
-    } catch (err) {
+    } catch (err: any) {
       setError('Connection error during check-in.');
     } finally {
       setLoading(false);
@@ -267,7 +294,7 @@ const ScanPage: React.FC = () => {
                 {loading && <div className="text-center text-slate-400 py-4 animate-pulse font-medium">Verifying booking details...</div>}
                 
                 {error && (
-                  <div className="p-4 bg-red-50 text-red-600 rounded-2xl text-sm font-bold border border-red-100">
+                  <div className="p-4 bg-red-50 text-red-600 rounded-2xl text-sm font-bold border border-red-100 animate-in fade-in">
                     {error}
                   </div>
                 )}
