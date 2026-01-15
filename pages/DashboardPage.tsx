@@ -22,16 +22,70 @@ const DashboardPage: React.FC = () => {
   const logoUrl = "https://cdn.shopify.com/s/files/1/0753/8144/0861/files/cropped-Untitled-design-2025-09-11T094640.576_1.png?v=1765462614&width=160&format=webp";
 
   useEffect(() => {
-    const q = query(collection(db, 'bookings'), orderBy('dropOff.datetime', 'asc'));
-    
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const docs = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as Booking[];
-      setBookings(docs);
-      setLoading(false);
+const q = query(collection(db, "bookings"), orderBy("createdAt", "desc"));
+
+const unsubscribe = onSnapshot(
+  q,
+  (snapshot) => {
+    const docs: Booking[] = snapshot.docs.map((d) => {
+      const data: any = d.data();
+
+      return {
+        id: d.id,
+        bookingRef: String(data.bookingRef ?? ""),
+        stripeSessionId: String(data.stripeSessionId ?? ""),
+        createdAt: data.createdAt ?? null,
+
+        // Not in your Firestore doc, keep safe
+        bookedOnRome: "",
+
+        customer: {
+          name: String(data.customer?.name ?? ""),
+          email: String(data.customer?.email ?? ""),
+          phone: String(data.customer?.phone ?? ""),
+        },
+
+        dropOff: {
+          date: String(data.dropOff?.date ?? ""),
+          time: String(data.dropOff?.time ?? ""),
+          datetime: data.dropOff?.datetime ?? null, // may not exist
+        },
+
+        pickUp: {
+          date: String(data.pickUp?.date ?? ""),
+          time: String(data.pickUp?.time ?? ""),
+          datetime: data.pickUp?.datetime ?? null, // may not exist
+        },
+
+        billableDays: Number(data.billableDays ?? 0),
+
+        bags: {
+          small: Number(data.bags?.small ?? 0),
+          medium: Number(data.bags?.medium ?? 0),
+          large: Number(data.bags?.large ?? 0),
+        },
+
+        totalPaid: Number(data.totalPaid ?? 0),
+        currency: String(data.currency ?? "EUR"),
+        status: (data.status ?? "paid") as any,
+
+        // your Firestore doc uses dropOff.notes, not notes
+        notes: String(data.dropOff?.notes ?? ""),
+
+        walletIssued: Boolean(data.walletIssued ?? false),
+      };
     });
+
+    setBookings(docs);
+    setLoading(false);
+  },
+  (err) => {
+    console.error("Firestore bookings snapshot error:", err);
+    setBookings([]);
+    setLoading(false);
+  }
+);
+
 
     return () => unsubscribe();
   }, []);
