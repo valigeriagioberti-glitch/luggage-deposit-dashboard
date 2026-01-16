@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 // Using explicit type import for User and standardizing modular imports
@@ -8,6 +9,7 @@ import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import UnauthorizedPage from './pages/UnauthorizedPage';
 import ScanPage from './pages/ScanPage';
+import ReportsPage from './pages/ReportsPage';
 
 const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -74,6 +76,10 @@ const App: React.FC = () => {
         <Route 
           path="/scan" 
           element={user && isAdmin ? <ScanPage /> : <Navigate to="/login" />} 
+        />
+        <Route 
+          path="/reports" 
+          element={user && isAdmin ? <ReportsPage /> : <Navigate to="/login" />} 
         />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>

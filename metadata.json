@@ -1,5 +1,8 @@
+
 {
   "name": "Luggage Deposit Rome Admin Dashboard",
   "description": "A secure admin panel to manage luggage storage bookings, track status, and handle customer communication.",
-  "requestFramePermissions": []
+  "requestFramePermissions": [
+    "camera"
+  ]
 }
