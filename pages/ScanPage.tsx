@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Html5Qrcode } from 'html5-qrcode';
 import { auth } from '../firebase';
+import StatusBadge from '../components/StatusBadge';
 
 interface BookingSummary {
   id: string;
@@ -20,20 +21,19 @@ interface BookingSummary {
     date: string;
     time: string;
   };
-  status: string;
+  status: any;
 }
 
 const ScanPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  // Support both 'token' (legacy) and 'ref' (new) in URL params
   const initialRef = searchParams.get('ref') || searchParams.get('token');
   const [bookingRef, setBookingRef] = useState<string | null>(initialRef);
   const [manualInput, setManualInput] = useState('');
   const [booking, setBooking] = useState<BookingSummary | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isCameraActive, setIsCameraActive] = useState(false);
   const html5QrCodeRef = useRef<Html5Qrcode | null>(null);
 
@@ -48,8 +48,6 @@ const ScanPage: React.FC = () => {
 
   const extractBookingRef = (input: string): string => {
     let cleanInput = input.trim();
-    
-    // Check for "ref=" in URL (new format)
     if (cleanInput.includes('ref=')) {
       try {
         const normalized = cleanInput.replace('/#/', '/');
@@ -58,63 +56,44 @@ const ScanPage: React.FC = () => {
         if (param) return param.toUpperCase();
       } catch (e) {
         const parts = cleanInput.split('ref=');
-        if (parts.length > 1) {
-          return parts[1].split('&')[0].toUpperCase();
-        }
+        if (parts.length > 1) return parts[1].split('&')[0].toUpperCase();
       }
     }
-    
-    // Check for "token=" (legacy/backwards compatibility if needed)
-    if (cleanInput.includes('token=')) {
-       const parts = cleanInput.split('token=');
-       // If it looks like a JWT (dots), we can't easily extract a ref here without decoding
-       // But if it's the new flow, we expect ref=
-       if (parts.length > 1) return parts[1].split('&')[0];
-    }
-
     return cleanInput.toUpperCase();
   };
 
   const validateAndProcessInput = (rawInput: string) => {
     setError(null);
     const extracted = extractBookingRef(rawInput);
-    
     if (extracted.length < 4) {
-      setError("Invalid code format.");
+      setError("Reference too short.");
       return;
     }
-
     setBookingRef(extracted);
   };
 
   const lookupBooking = async (ref: string) => {
     setLoading(true);
     setError(null);
+    setSuccessMessage(null);
     try {
       const response = await fetch('/api/booking/lookup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ bookingRef: ref }),
       });
-      
       const data = await response.json();
-      
       if (response.ok) {
         setBooking(data.booking);
       } else {
-        setError(data.error || `Server error: ${response.status}`);
+        setError(data.error || 'Booking not found.');
+        setBooking(null);
       }
-    } catch (err: any) {
-      setError('Connection error: Please check your internet or try again.');
+    } catch (err) {
+      setError('Connection error.');
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleManualSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!manualInput) return;
-    validateAndProcessInput(manualInput);
   };
 
   const startCamera = async () => {
@@ -122,7 +101,6 @@ const ScanPage: React.FC = () => {
     setError(null);
     const html5QrCode = new Html5Qrcode("qr-reader");
     html5QrCodeRef.current = html5QrCode;
-    
     try {
       await html5QrCode.start(
         { facingMode: "environment" },
@@ -131,10 +109,10 @@ const ScanPage: React.FC = () => {
           validateAndProcessInput(decodedText);
           stopCamera();
         },
-        () => {} // silent scan errors
+        () => {}
       );
     } catch (err) {
-      setError("Camera access denied or not available.");
+      setError("Camera access error.");
       setIsCameraActive(false);
     }
   };
@@ -146,29 +124,33 @@ const ScanPage: React.FC = () => {
     }
   };
 
-  const confirmCheckIn = async () => {
+  const triggerVibrate = () => {
+    if ('vibrate' in navigator) {
+      navigator.vibrate([200, 100, 200]);
+    }
+  };
+
+  const handleAction = async (action: 'checkin' | 'pickup') => {
     if (!bookingRef || !booking) return;
     setLoading(true);
+    setError(null);
     try {
-      const response = await fetch('/api/booking/checkin', {
+      const endpoint = action === 'checkin' ? '/api/booking/checkin' : '/api/booking/pickup';
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          bookingRef, 
-          adminEmail: auth.currentUser?.email 
-        }),
+        body: JSON.stringify({ bookingRef, adminEmail: auth.currentUser?.email }),
       });
-      
-      const data = await response.json();
-
       if (response.ok) {
-        setSuccess(true);
-        setTimeout(() => navigate('/'), 2000);
+        triggerVibrate();
+        setSuccessMessage(action === 'checkin' ? 'Checked in successfully ✅' : 'Picked up successfully ✅');
+        setTimeout(() => navigate('/'), 2500);
       } else {
-        setError(data.error || 'Check-in failed.');
+        const data = await response.json();
+        setError(data.error || 'Action failed.');
       }
-    } catch (err: any) {
-      setError('Connection error during check-in.');
+    } catch (err) {
+      setError('Connection error.');
     } finally {
       setLoading(false);
     }
@@ -177,87 +159,98 @@ const ScanPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-50 p-4 md:p-8 flex items-center justify-center">
       <div className="max-w-md w-full">
-        <button 
-          onClick={() => navigate('/')}
-          className="mb-6 flex items-center text-slate-500 hover:text-slate-900 font-medium transition-colors"
-        >
+        <button onClick={() => navigate('/')} className="mb-6 flex items-center text-slate-500 hover:text-slate-900 font-medium">
           <svg className="w-5 h-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-          Back to Dashboard
+          Dashboard
         </button>
 
         <div className="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
           <div className="p-6 bg-slate-900 text-white">
-            <h1 className="text-xl font-bold">Booking Check-in</h1>
-            <p className="text-slate-400 text-sm">Scan QR code or enter Reference</p>
+            <h1 className="text-xl font-bold">Staff Scanner</h1>
+            <p className="text-slate-400 text-sm">QR Scan or Manual Entry</p>
           </div>
 
           <div className="p-8">
-            {success ? (
-              <div className="text-center py-10">
+            {successMessage ? (
+              <div className="text-center py-10 animate-in zoom-in duration-300">
                 <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6">
                   <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
                 </div>
-                <h2 className="text-2xl font-bold text-slate-900 mb-2">Check-in Success!</h2>
-                <p className="text-slate-500">Booking status updated to Checked In.</p>
+                <h2 className="text-2xl font-bold text-slate-900 mb-2">Done!</h2>
+                <p className="text-emerald-600 font-bold">{successMessage}</p>
+                <p className="text-slate-400 text-sm mt-4 italic">Redirecting to dashboard...</p>
               </div>
             ) : booking ? (
-              <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
+              <div className="space-y-6">
                 <div className="flex justify-between items-start">
                   <div>
                     <span className="text-xs font-bold uppercase tracking-widest text-blue-600">Reference</span>
                     <h2 className="text-3xl font-black text-slate-900">#{booking.bookingRef}</h2>
                   </div>
-                  <div className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${booking.status === 'paid' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}`}>
-                    {booking.status.replace('_', ' ')}
-                  </div>
+                  <StatusBadge status={booking.status} />
                 </div>
 
-                <div className="bg-slate-50 rounded-2xl p-6 space-y-4">
+                <div className="bg-slate-50 rounded-2xl p-6 space-y-4 border border-slate-100">
                   <div>
-                    <p className="text-xs font-semibold text-slate-400 uppercase mb-1">Customer</p>
+                    <p className="text-xs font-semibold text-slate-400 uppercase">Customer</p>
                     <p className="font-bold text-slate-900">{booking.customer.name}</p>
-                    <p className="text-sm text-slate-500">{booking.customer.phone}</p>
                   </div>
-                  <div className="flex gap-8">
+                  <div className="flex justify-between">
                     <div>
-                      <p className="text-xs font-semibold text-slate-400 uppercase mb-1">Drop-off</p>
-                      <p className="font-bold text-slate-900">{booking.dropOff.date}</p>
-                      <p className="text-xs text-slate-500">{booking.dropOff.time}</p>
+                      <p className="text-xs font-semibold text-slate-400 uppercase">Schedule</p>
+                      <p className="font-bold text-slate-900 text-sm">{booking.dropOff.date} @ {booking.dropOff.time}</p>
                     </div>
                     <div>
-                      <p className="text-xs font-semibold text-slate-400 uppercase mb-1">Bags</p>
-                      <p className="font-bold text-slate-900">{booking.bags.small + booking.bags.medium + booking.bags.large} Total</p>
-                      <p className="text-xs text-slate-500">
-                        {booking.bags.small}S {booking.bags.medium}M {booking.bags.large}L
-                      </p>
+                      <p className="text-xs font-semibold text-slate-400 uppercase">Bags</p>
+                      <p className="font-bold text-slate-900 text-sm">{booking.bags.small + booking.bags.medium + booking.bags.large} Total</p>
                     </div>
                   </div>
                 </div>
 
-                <button
-                  onClick={confirmCheckIn}
-                  disabled={loading || booking.status === 'checked_in'}
-                  className="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold text-lg hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all active:scale-95 disabled:opacity-50"
-                >
-                  {loading ? 'Processing...' : booking.status === 'checked_in' ? 'Already Checked In' : 'Complete Check-in'}
-                </button>
-                
-                <button 
-                  onClick={() => { setBooking(null); setBookingRef(null); setManualInput(''); }}
-                  className="w-full text-slate-400 font-semibold text-sm hover:text-slate-600"
-                >
-                  Cancel & Scan New
-                </button>
+                <div className="space-y-3">
+                  {booking.status === 'paid' && (
+                    <button
+                      onClick={() => handleAction('checkin')}
+                      disabled={loading}
+                      className="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold text-lg hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all active:scale-95 disabled:opacity-50"
+                    >
+                      {loading ? 'Processing...' : 'Confirm Check-In'}
+                    </button>
+                  )}
+
+                  {booking.status === 'checked_in' && (
+                    <button
+                      onClick={() => handleAction('pickup')}
+                      disabled={loading}
+                      className="w-full bg-slate-900 text-white py-4 rounded-2xl font-bold text-lg hover:bg-black shadow-lg shadow-slate-200 transition-all active:scale-95 disabled:opacity-50"
+                    >
+                      {loading ? 'Processing...' : 'Mark as Picked Up'}
+                    </button>
+                  )}
+
+                  {(booking.status === 'picked_up' || booking.status === 'cancelled') && (
+                    <div className="p-4 bg-slate-100 rounded-2xl text-center text-slate-500 font-bold italic">
+                      This booking is already {booking.status.replace('_', ' ')}.
+                    </div>
+                  )}
+
+                  <button 
+                    onClick={() => { setBooking(null); setBookingRef(null); setManualInput(''); setError(null); }}
+                    className="w-full text-slate-400 font-semibold text-sm hover:text-slate-600 py-2"
+                  >
+                    Cancel & Scan New
+                  </button>
+                </div>
               </div>
             ) : (
               <div className="space-y-6">
-                <div id="qr-reader" className={`${isCameraActive ? 'block' : 'hidden'} overflow-hidden rounded-2xl bg-black aspect-square`}></div>
+                <div id="qr-reader" className={`${isCameraActive ? 'block' : 'hidden'} overflow-hidden rounded-2xl bg-black aspect-square shadow-inner`}></div>
                 
                 {!isCameraActive && (
                   <div className="space-y-6">
                     <button
                       onClick={startCamera}
-                      className="w-full bg-slate-900 text-white py-4 rounded-2xl font-bold text-lg hover:bg-slate-800 transition-all flex items-center justify-center gap-2"
+                      className="w-full bg-slate-900 text-white py-4 rounded-2xl font-bold text-lg hover:bg-slate-800 transition-all flex items-center justify-center gap-2 shadow-lg"
                     >
                       <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                       Open QR Scanner
@@ -265,40 +258,34 @@ const ScanPage: React.FC = () => {
 
                     <div className="relative">
                       <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-200"></div></div>
-                      <div className="relative flex justify-center text-sm"><span className="px-2 bg-white text-slate-400 font-medium">or type reference</span></div>
+                      <div className="relative flex justify-center text-sm"><span className="px-2 bg-white text-slate-400 font-medium italic">Manual Reference Entry</span></div>
                     </div>
 
-                    <form onSubmit={handleManualSubmit} className="space-y-3">
+                    <form onSubmit={(e) => { e.preventDefault(); validateAndProcessInput(manualInput); }} className="space-y-3">
                       <input 
                         type="text" 
                         value={manualInput}
                         onChange={(e) => setManualInput(e.target.value)}
-                        placeholder="e.g. AGZK84RK or paste URL"
-                        className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-sm uppercase"
+                        placeholder="e.g. AGZK84RK"
+                        className="w-full px-4 py-4 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-center text-lg font-mono font-bold tracking-widest uppercase"
                       />
-                      <button 
-                        type="submit"
-                        className="w-full py-3 text-sm font-bold text-slate-600 hover:text-slate-900 bg-slate-100 rounded-xl hover:bg-slate-200 transition-all"
-                      >
-                        Lookup Booking
+                      <button type="submit" className="w-full py-3 text-sm font-bold text-slate-600 hover:text-slate-900 bg-slate-100 rounded-xl transition-all">
+                        Lookup Reference
                       </button>
                     </form>
                   </div>
                 )}
 
                 {isCameraActive && (
-                  <button 
-                    onClick={stopCamera}
-                    className="w-full text-red-500 font-bold py-2"
-                  >
-                    Close Camera
+                  <button onClick={stopCamera} className="w-full text-red-500 font-bold py-2 hover:bg-red-50 rounded-xl transition-all">
+                    Stop Scanner
                   </button>
                 )}
 
-                {loading && <div className="text-center text-slate-400 py-4 animate-pulse font-medium">Loading...</div>}
+                {loading && <div className="text-center text-slate-400 py-4 animate-pulse">Checking records...</div>}
                 
                 {error && (
-                  <div className="p-4 bg-red-50 text-red-600 rounded-2xl text-sm font-bold border border-red-100 animate-in fade-in">
+                  <div className="p-4 bg-red-50 text-red-600 rounded-2xl text-sm font-bold border border-red-100 text-center animate-in fade-in">
                     {error}
                   </div>
                 )}
