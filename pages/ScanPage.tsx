@@ -26,7 +26,9 @@ interface BookingSummary {
 const ScanPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const [token, setToken] = useState<string | null>(searchParams.get('token'));
+  // Support both 'token' (legacy) and 'ref' (new) in URL params
+  const initialRef = searchParams.get('ref') || searchParams.get('token');
+  const [bookingRef, setBookingRef] = useState<string | null>(initialRef);
   const [manualInput, setManualInput] = useState('');
   const [booking, setBooking] = useState<BookingSummary | null>(null);
   const [loading, setLoading] = useState(false);
@@ -36,55 +38,63 @@ const ScanPage: React.FC = () => {
   const html5QrCodeRef = useRef<Html5Qrcode | null>(null);
 
   useEffect(() => {
-    if (token) {
-      verifyToken(token);
+    if (bookingRef) {
+      lookupBooking(bookingRef);
     }
     return () => {
       stopCamera();
     };
-  }, [token]);
+  }, [bookingRef]);
 
-  const extractToken = (input: string): string => {
+  const extractBookingRef = (input: string): string => {
     let cleanInput = input.trim();
-    if (cleanInput.includes('token=')) {
+    
+    // Check for "ref=" in URL (new format)
+    if (cleanInput.includes('ref=')) {
       try {
-        // Handle hash URLs: replace /#/ with / to allow URL searchParams to work
         const normalized = cleanInput.replace('/#/', '/');
         const url = new URL(normalized);
-        const param = url.searchParams.get('token');
-        if (param) return decodeURIComponent(param);
+        const param = url.searchParams.get('ref');
+        if (param) return param.toUpperCase();
       } catch (e) {
-        // Manual split fallback if URL parsing fails
-        const parts = cleanInput.split('token=');
+        const parts = cleanInput.split('ref=');
         if (parts.length > 1) {
-          return decodeURIComponent(parts[1].split('&')[0]);
+          return parts[1].split('&')[0].toUpperCase();
         }
       }
     }
-    return decodeURIComponent(cleanInput);
+    
+    // Check for "token=" (legacy/backwards compatibility if needed)
+    if (cleanInput.includes('token=')) {
+       const parts = cleanInput.split('token=');
+       // If it looks like a JWT (dots), we can't easily extract a ref here without decoding
+       // But if it's the new flow, we expect ref=
+       if (parts.length > 1) return parts[1].split('&')[0];
+    }
+
+    return cleanInput.toUpperCase();
   };
 
-  const validateAndProcessToken = (rawInput: string) => {
+  const validateAndProcessInput = (rawInput: string) => {
     setError(null);
-    const extractedToken = extractToken(rawInput);
+    const extracted = extractBookingRef(rawInput);
     
-    // Validate JWT shape (three segments)
-    if (extractedToken.split('.').length !== 3) {
-      setError("Invalid token (not JWT).");
+    if (extracted.length < 4) {
+      setError("Invalid code format.");
       return;
     }
 
-    setToken(extractedToken);
+    setBookingRef(extracted);
   };
 
-  const verifyToken = async (jwtToken: string) => {
+  const lookupBooking = async (ref: string) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/checkin/verify', {
+      const response = await fetch('/api/booking/lookup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: jwtToken }),
+        body: JSON.stringify({ bookingRef: ref }),
       });
       
       const data = await response.json();
@@ -92,16 +102,10 @@ const ScanPage: React.FC = () => {
       if (response.ok) {
         setBooking(data.booking);
       } else {
-        // Display specific error message from the API
         setError(data.error || `Server error: ${response.status}`);
       }
     } catch (err: any) {
-      // Distinguish between network errors and logic errors
-      if (err.name === 'TypeError' || err.message.includes('fetch')) {
-        setError('Connection error: Please check your internet or try again.');
-      } else {
-        setError(err.message || 'An unexpected error occurred during verification.');
-      }
+      setError('Connection error: Please check your internet or try again.');
     } finally {
       setLoading(false);
     }
@@ -110,7 +114,7 @@ const ScanPage: React.FC = () => {
   const handleManualSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!manualInput) return;
-    validateAndProcessToken(manualInput);
+    validateAndProcessInput(manualInput);
   };
 
   const startCamera = async () => {
@@ -124,7 +128,7 @@ const ScanPage: React.FC = () => {
         { facingMode: "environment" },
         { fps: 10, qrbox: { width: 250, height: 250 } },
         (decodedText) => {
-          validateAndProcessToken(decodedText);
+          validateAndProcessInput(decodedText);
           stopCamera();
         },
         () => {} // silent scan errors
@@ -143,14 +147,14 @@ const ScanPage: React.FC = () => {
   };
 
   const confirmCheckIn = async () => {
-    if (!token || !booking) return;
+    if (!bookingRef || !booking) return;
     setLoading(true);
     try {
-      const response = await fetch('/api/checkin/confirm', {
+      const response = await fetch('/api/booking/checkin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          token, 
+          bookingRef, 
           adminEmail: auth.currentUser?.email 
         }),
       });
@@ -183,8 +187,8 @@ const ScanPage: React.FC = () => {
 
         <div className="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
           <div className="p-6 bg-slate-900 text-white">
-            <h1 className="text-xl font-bold">Secure Check-in</h1>
-            <p className="text-slate-400 text-sm">Scan QR or enter token manually</p>
+            <h1 className="text-xl font-bold">Booking Check-in</h1>
+            <p className="text-slate-400 text-sm">Scan QR code or enter Reference</p>
           </div>
 
           <div className="p-8">
@@ -204,7 +208,7 @@ const ScanPage: React.FC = () => {
                     <h2 className="text-3xl font-black text-slate-900">#{booking.bookingRef}</h2>
                   </div>
                   <div className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${booking.status === 'paid' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}`}>
-                    {booking.status}
+                    {booking.status.replace('_', ' ')}
                   </div>
                 </div>
 
@@ -232,14 +236,14 @@ const ScanPage: React.FC = () => {
 
                 <button
                   onClick={confirmCheckIn}
-                  disabled={loading}
+                  disabled={loading || booking.status === 'checked_in'}
                   className="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold text-lg hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all active:scale-95 disabled:opacity-50"
                 >
-                  {loading ? 'Processing...' : 'Complete Check-in'}
+                  {loading ? 'Processing...' : booking.status === 'checked_in' ? 'Already Checked In' : 'Complete Check-in'}
                 </button>
                 
                 <button 
-                  onClick={() => { setBooking(null); setToken(null); }}
+                  onClick={() => { setBooking(null); setBookingRef(null); setManualInput(''); }}
                   className="w-full text-slate-400 font-semibold text-sm hover:text-slate-600"
                 >
                   Cancel & Scan New
@@ -261,7 +265,7 @@ const ScanPage: React.FC = () => {
 
                     <div className="relative">
                       <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-200"></div></div>
-                      <div className="relative flex justify-center text-sm"><span className="px-2 bg-white text-slate-400 font-medium">or paste code</span></div>
+                      <div className="relative flex justify-center text-sm"><span className="px-2 bg-white text-slate-400 font-medium">or type reference</span></div>
                     </div>
 
                     <form onSubmit={handleManualSubmit} className="space-y-3">
@@ -269,14 +273,14 @@ const ScanPage: React.FC = () => {
                         type="text" 
                         value={manualInput}
                         onChange={(e) => setManualInput(e.target.value)}
-                        placeholder="Paste URL or Token here"
-                        className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-sm"
+                        placeholder="e.g. AGZK84RK or paste URL"
+                        className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-sm uppercase"
                       />
                       <button 
                         type="submit"
                         className="w-full py-3 text-sm font-bold text-slate-600 hover:text-slate-900 bg-slate-100 rounded-xl hover:bg-slate-200 transition-all"
                       >
-                        Verify Manual Code
+                        Lookup Booking
                       </button>
                     </form>
                   </div>
@@ -291,7 +295,7 @@ const ScanPage: React.FC = () => {
                   </button>
                 )}
 
-                {loading && <div className="text-center text-slate-400 py-4 animate-pulse font-medium">Verifying booking details...</div>}
+                {loading && <div className="text-center text-slate-400 py-4 animate-pulse font-medium">Loading...</div>}
                 
                 {error && (
                   <div className="p-4 bg-red-50 text-red-600 rounded-2xl text-sm font-bold border border-red-100 animate-in fade-in">
