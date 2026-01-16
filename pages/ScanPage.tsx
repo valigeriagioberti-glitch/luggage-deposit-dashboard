@@ -246,15 +246,33 @@ const ScanPage: React.FC = () => {
                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Customer</p>
                       <p className="font-black text-slate-900 text-lg">{booking.customer.name}</p>
                     </div>
-                    <div className="flex justify-between border-t border-slate-200 pt-4">
-                      <div>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Schedule</p>
-                        <p className="font-bold text-slate-900 text-sm">{booking.dropOff.date}</p>
-                        <p className="text-xs text-slate-500">{booking.dropOff.time}</p>
+                    <div className="border-t border-slate-200 pt-4">
+                      <div className="flex justify-between items-start mb-4">
+                        <div>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Schedule</p>
+                          <p className="font-bold text-slate-900 text-sm">{booking.dropOff.date}</p>
+                          <p className="text-xs text-slate-500">{booking.dropOff.time}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Total Bags</p>
+                          <p className="font-black text-slate-900 text-xl">{booking.bags.small + booking.bags.medium + booking.bags.large}</p>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Bags</p>
-                        <p className="font-black text-slate-900 text-lg">{booking.bags.small + booking.bags.medium + booking.bags.large}</p>
+                      
+                      {/* Luggage Inventory Breakdown */}
+                      <div className="grid grid-cols-3 gap-2 mt-4">
+                         <div className="bg-white border border-slate-200 rounded-xl p-2 text-center shadow-sm">
+                            <p className="text-lg font-black text-slate-900 leading-none">{booking.bags.small || 0}</p>
+                            <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-1">Small</p>
+                         </div>
+                         <div className="bg-white border border-slate-200 rounded-xl p-2 text-center shadow-sm">
+                            <p className="text-lg font-black text-slate-900 leading-none">{booking.bags.medium || 0}</p>
+                            <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-1">Medium</p>
+                         </div>
+                         <div className="bg-white border border-slate-200 rounded-xl p-2 text-center shadow-sm">
+                            <p className="text-lg font-black text-slate-900 leading-none">{booking.bags.large || 0}</p>
+                            <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-1">Large</p>
+                         </div>
                       </div>
                     </div>
                   </div>
