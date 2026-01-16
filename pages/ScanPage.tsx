@@ -323,7 +323,6 @@ const ScanPage: React.FC = () => {
                <form onSubmit={(e) => { e.preventDefault(); validateAndProcessInput(manualInput); }} className="space-y-4">
                   <input 
                     type="text" 
-                    autoFocus
                     value={manualInput}
                     onChange={(e) => setManualInput(e.target.value)}
                     placeholder="ENTER REFERENCE"

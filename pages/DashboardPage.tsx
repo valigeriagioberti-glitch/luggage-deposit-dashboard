@@ -126,7 +126,7 @@ const DashboardPage: React.FC = () => {
   const handleLogout = () => signOut(auth);
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-32 overflow-x-hidden flex flex-col">
+    <div className="min-h-screen bg-slate-50 pb-24 sm:pb-32 overflow-x-hidden flex flex-col">
       {/* App Header */}
       <header className="bg-white border-b border-slate-100 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
@@ -158,7 +158,7 @@ const DashboardPage: React.FC = () => {
         )}
 
         {/* Page Heading & Search */}
-        <div className="mb-10 space-y-6">
+        <div className="mb-8 space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
             <div className="space-y-1">
               <div className="flex items-center gap-4">
@@ -166,19 +166,18 @@ const DashboardPage: React.FC = () => {
                 <div className="bg-slate-200 p-1 rounded-2xl flex shadow-inner">
                    <button 
                     onClick={() => setViewMode('active')}
-                    className={`px-5 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${viewMode === 'active' ? 'bg-white text-blue-600 shadow-md' : 'text-slate-500 hover:text-slate-700'}`}
+                    className={`px-4 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-xl transition-all ${viewMode === 'active' ? 'bg-white text-blue-600 shadow-md' : 'text-slate-500 hover:text-slate-700'}`}
                   >
                     Active
                   </button>
                   <button 
                     onClick={() => setViewMode('archived')}
-                    className={`px-5 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${viewMode === 'archived' ? 'bg-white text-blue-600 shadow-md' : 'text-slate-500 hover:text-slate-700'}`}
+                    className={`px-4 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-xl transition-all ${viewMode === 'archived' ? 'bg-white text-blue-600 shadow-md' : 'text-slate-500 hover:text-slate-700'}`}
                   >
                     Archive
                   </button>
                 </div>
               </div>
-              <p className="text-slate-400 font-bold text-sm tracking-tight">Real-time luggage management system</p>
             </div>
             
             <div className="relative group w-full sm:w-auto">
@@ -203,7 +202,7 @@ const DashboardPage: React.FC = () => {
                 <button
                   key={f}
                   onClick={() => setDateFilter(f)}
-                  className={`px-6 py-3 text-xs font-black rounded-2xl border-2 transition-all capitalize shadow-sm ${dateFilter === f ? 'bg-blue-600 border-blue-600 text-white shadow-xl shadow-blue-500/20' : 'bg-white border-slate-100 text-slate-500 hover:border-slate-300'}`}
+                  className={`px-5 py-2.5 text-[10px] font-black rounded-2xl border-2 transition-all capitalize shadow-sm ${dateFilter === f ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-500/20' : 'bg-white border-slate-100 text-slate-500 hover:border-slate-300'}`}
                 >
                   {f}
                 </button>
@@ -216,7 +215,7 @@ const DashboardPage: React.FC = () => {
                 <button
                   key={s}
                   onClick={() => setStatusFilter(s)}
-                  className={`px-4 py-2 text-[10px] font-black rounded-xl border transition-all capitalize uppercase tracking-widest ${statusFilter === s ? 'bg-slate-900 border-slate-900 text-white shadow-lg' : 'bg-slate-50 border-slate-100 text-slate-400 hover:text-slate-600 hover:bg-white'}`}
+                  className={`px-3 py-1.5 text-[9px] font-black rounded-xl border transition-all capitalize uppercase tracking-widest ${statusFilter === s ? 'bg-slate-900 border-slate-900 text-white shadow-lg' : 'bg-slate-50 border-slate-100 text-slate-400 hover:text-slate-600 hover:bg-white'}`}
                 >
                   {s.replace('_', ' ')}
                 </button>
@@ -225,8 +224,8 @@ const DashboardPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Data Container */}
-        <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/50 overflow-hidden min-h-[400px]">
+        {/* Data Container - Table fixed for mobile, no horizontal scroll */}
+        <div className="bg-white rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/50 overflow-hidden min-h-[400px]">
           {loading ? (
             <div className="flex flex-col items-center justify-center p-32 space-y-4">
                <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
@@ -238,19 +237,18 @@ const DashboardPage: React.FC = () => {
                  <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>
               </div>
               <p className="text-slate-900 font-black text-xl mb-2">No Records Found</p>
-              <p className="text-slate-400 text-sm font-medium mb-8">Try adjusting your filters or search terms.</p>
-              <button onClick={() => { setSearch(''); setDateFilter('all'); setStatusFilter('all'); }} className="px-8 py-3 bg-slate-900 text-white font-black text-[10px] uppercase tracking-widest rounded-2xl hover:bg-black transition-all">Clear Filters</button>
+              <button onClick={() => { setSearch(''); setDateFilter('all'); setStatusFilter('all'); }} className="text-blue-600 font-black text-[10px] uppercase tracking-widest hover:underline">Clear Filters</button>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
+            <div className="sm:overflow-x-auto overflow-x-hidden">
+              <table className="w-full text-left border-collapse table-fixed">
                 <thead>
                   <tr className="bg-slate-50/50 text-slate-400 text-[9px] font-black uppercase tracking-[0.2em] border-b border-slate-50">
-                    <th className="px-8 py-6">Ref & Status</th>
-                    <th className="px-8 py-6">Guest</th>
+                    <th className="px-6 py-5 w-[40%] sm:w-auto">Reference</th>
+                    <th className="px-6 py-5 w-[60%] sm:w-auto">Guest</th>
                     <th className="hidden lg:table-cell px-8 py-6">Drop-off</th>
                     <th className="hidden sm:table-cell px-8 py-6 text-center">Bags</th>
-                    <th className="px-8 py-6 text-right">Revenue</th>
+                    <th className="hidden sm:table-cell px-8 py-6 text-right">Revenue</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
@@ -260,17 +258,15 @@ const DashboardPage: React.FC = () => {
                       className="hover:bg-blue-50/30 transition-all cursor-pointer group active:bg-slate-100"
                       onClick={() => setSelectedBookingId(booking.id)}
                     >
-                      <td className="px-8 py-6 align-top">
-                        <span className="font-mono font-black text-slate-900 block text-base mb-2 group-hover:text-blue-600 transition-colors">#{booking.bookingRef}</span>
-                        <div className="flex items-center gap-2">
+                      <td className="px-6 py-5 align-top">
+                        <span className="font-mono font-black text-slate-900 block text-sm mb-2 group-hover:text-blue-600 transition-colors">#{booking.bookingRef}</span>
+                        <div className="flex items-center gap-1.5">
                            <StatusBadge status={booking.status} />
-                           {/* Mobile only date indicator */}
-                           <span className="lg:hidden text-[9px] font-black text-slate-300 uppercase">{booking.dropOff.date}</span>
                         </div>
                       </td>
-                      <td className="px-8 py-6 align-top">
-                        <p className="font-black text-slate-900 text-sm mb-1">{booking.customer.name}</p>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight hidden sm:block">{booking.customer.email}</p>
+                      <td className="px-6 py-5 align-top">
+                        <p className="font-black text-slate-900 text-sm mb-0.5 truncate">{booking.customer.name}</p>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight truncate">{booking.dropOff.date} • {booking.dropOff.time}</p>
                       </td>
                       <td className="hidden lg:table-cell px-8 py-6 align-top">
                         <p className="text-sm font-black text-slate-900">{booking.dropOff.date}</p>
@@ -281,7 +277,7 @@ const DashboardPage: React.FC = () => {
                           {booking.bags.small + booking.bags.medium + booking.bags.large}
                         </span>
                       </td>
-                      <td className="px-8 py-6 align-top text-right">
+                      <td className="hidden sm:table-cell px-8 py-6 align-top text-right">
                         <p className="font-black text-slate-900 text-sm mb-1">{booking.totalPaid} {booking.currency}</p>
                         <p className="text-[9px] text-slate-400 font-bold uppercase">{booking.billableDays} Days</p>
                       </td>
@@ -292,19 +288,16 @@ const DashboardPage: React.FC = () => {
             </div>
           )}
         </div>
-        
-        {/* FAB Compliance Spacer */}
-        <div className="h-32"></div>
       </main>
 
-      {/* MOBILE FAB - SCAN QR */}
-      <div className="sm:hidden fixed bottom-8 left-1/2 -translate-x-1/2 z-30">
+      {/* MOBILE STICKY FOOTER ACTION */}
+      <div className="sm:hidden fixed bottom-0 left-0 right-0 z-40 p-4 bg-white/80 backdrop-blur-xl border-t border-slate-100 shadow-[0_-10px_30px_rgba(0,0,0,0.05)]">
          <button 
            onClick={() => navigate('/scan')}
-           className="px-10 py-5 bg-blue-600 text-white rounded-[2rem] font-black text-lg shadow-2xl shadow-blue-600/50 active:scale-95 transition-all flex items-center gap-4 border-4 border-white"
+           className="w-full h-14 bg-blue-600 text-white rounded-2xl font-black text-lg shadow-xl shadow-blue-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-3"
          >
-           <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" /></svg>
-           SCAN
+           <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" /></svg>
+           SCAN QR CODE
          </button>
       </div>
 

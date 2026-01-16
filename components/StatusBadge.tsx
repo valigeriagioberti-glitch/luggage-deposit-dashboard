@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BookingStatus } from '../types';
 
@@ -15,13 +16,13 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
 
   const labels: Record<BookingStatus, string> = {
     paid: 'Paid',
-    checked_in: 'Checked In',
-    picked_up: 'Picked Up',
+    checked_in: 'In Storage',
+    picked_up: 'Picked', // Shortened for mobile-first single line
     cancelled: 'Cancelled',
   };
 
   return (
-    <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border shadow-sm ${styles[status]}`}>
+    <span className={`inline-flex items-center whitespace-nowrap px-2 py-0.5 sm:px-2.5 sm:py-0.5 rounded-full text-[10px] sm:text-xs font-bold border shadow-sm transition-all ${styles[status]}`}>
       {labels[status]}
     </span>
   );
