@@ -23,7 +23,6 @@ const DashboardPage: React.FC = () => {
 
   const logoUrl = "https://cdn.shopify.com/s/files/1/0753/8144/0861/files/cropped-Untitled-design-2025-09-11T094640.576_1.png?v=1765462614&width=160&format=webp";
 
-  // Derive the selected booking from the main bookings list for real-time updates in modal
   const selectedBooking = useMemo(() => 
     bookings.find(b => b.id === selectedBookingId) || null,
     [bookings, selectedBookingId]
@@ -32,13 +31,16 @@ const DashboardPage: React.FC = () => {
   useEffect(() => {
     setLoading(true);
     const collectionName = viewMode === 'active' ? "bookings" : "bookings_archive";
-    const q = query(collection(db, collectionName), orderBy("createdAt", "desc"));
+    // Fix 1: Use archivedAt for archive mode ordering
+    const sortField = viewMode === 'active' ? "createdAt" : "archivedAt";
+    const q = query(collection(db, collectionName), orderBy(sortField, "desc"));
 
     const unsubscribe = onSnapshot(
       q,
       (snapshot) => {
         const docs: Booking[] = snapshot.docs.map((d) => {
           const data: any = d.data();
+          // Safe defensive mapping
           return {
             id: d.id,
             bookingRef: String(data.bookingRef ?? ""),
@@ -70,7 +72,7 @@ const DashboardPage: React.FC = () => {
             totalPaid: Number(data.totalPaid ?? 0),
             currency: String(data.currency ?? "EUR"),
             status: (data.status ?? "paid") as any,
-            notes: String(data.dropOff?.notes ?? ""),
+            notes: String(data.notes ?? data.dropOff?.notes ?? ""),
             walletIssued: Boolean(data.walletIssued ?? false),
           };
         });
@@ -116,7 +118,6 @@ const DashboardPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 pb-12 overflow-x-hidden">
-      {/* Header */}
       <header className="bg-white border-b sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -124,13 +125,10 @@ const DashboardPage: React.FC = () => {
             <h1 className="font-bold text-lg text-slate-900 hidden sm:block">Admin Console</h1>
           </div>
           <div className="flex items-center gap-4">
-            {/* Desktop-only Nav Links */}
             <div className="hidden md:flex items-center gap-4 mr-4 border-r pr-4 border-slate-200">
                <Link to="/" className="text-sm font-bold text-blue-600">Bookings</Link>
                <Link to="/reports" className="text-sm font-bold text-slate-500 hover:text-blue-600 transition-colors">Reports</Link>
             </div>
-
-            {/* Desktop-only Scan Button */}
             <button 
               onClick={() => navigate('/scan')}
               className="hidden sm:flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-200"
@@ -138,7 +136,6 @@ const DashboardPage: React.FC = () => {
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" /></svg>
               <span>Scan QR</span>
             </button>
-
             <button 
               onClick={handleLogout}
               className="text-sm font-semibold text-slate-600 hover:text-red-600 transition-colors px-3 py-1.5 hover:bg-red-50 rounded-lg"
@@ -150,7 +147,6 @@ const DashboardPage: React.FC = () => {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 mt-6">
-        {/* Mobile-only Big Scan QR Button */}
         <div className="sm:hidden mb-6 flex flex-col gap-3">
           <button 
             onClick={() => navigate('/scan')}
@@ -174,7 +170,6 @@ const DashboardPage: React.FC = () => {
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4">
-            {/* View Toggle */}
             <div className="flex bg-white p-1 rounded-xl border border-slate-200 shadow-sm">
               <button 
                 onClick={() => setViewMode('active')}
@@ -189,7 +184,6 @@ const DashboardPage: React.FC = () => {
                 Archived
               </button>
             </div>
-
             <div className="relative">
               <input
                 type="text"
@@ -205,7 +199,6 @@ const DashboardPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Filters */}
         <div className="flex flex-wrap gap-2 mb-6">
           <div className="flex bg-white p-1 rounded-xl border border-slate-200 shadow-sm overflow-x-auto max-w-full hide-scrollbar">
             {(['all', 'today', 'upcoming', 'past'] as const).map((f) => (
@@ -218,7 +211,6 @@ const DashboardPage: React.FC = () => {
               </button>
             ))}
           </div>
-
           <div className="flex bg-white p-1 rounded-xl border border-slate-200 shadow-sm overflow-x-auto max-w-full hide-scrollbar">
             {(['all', 'paid', 'checked_in', 'picked_up', 'cancelled'] as const).map((s) => (
               <button
@@ -232,7 +224,6 @@ const DashboardPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Table/List */}
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
           {loading ? (
             <div className="p-20 text-center text-slate-400">Loading {viewMode} bookings...</div>
@@ -263,7 +254,6 @@ const DashboardPage: React.FC = () => {
                     >
                       <td className="px-4 py-4 md:px-6 align-top">
                         <span className="font-mono font-bold text-slate-900 block">#{booking.bookingRef}</span>
-                        {/* Mobile Details Block */}
                         <div className="md:hidden mt-2 flex flex-col gap-1.5 items-start">
                           <StatusBadge status={booking.status} />
                           <p className="text-[10px] text-slate-500 font-medium">
@@ -299,7 +289,6 @@ const DashboardPage: React.FC = () => {
         </div>
       </main>
 
-      {/* Detail Modal */}
       {selectedBooking && (
         <BookingDetailModal
           booking={selectedBooking}

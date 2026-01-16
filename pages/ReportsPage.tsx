@@ -44,16 +44,34 @@ const ReportsPage: React.FC = () => {
           createdAt: data.createdAt ?? null,
           archivedAt: data.archivedAt ?? null,
           bookedOnRome: "",
-          customer: data.customer,
-          dropOff: data.dropOff,
-          pickUp: data.pickUp,
+          customer: {
+            name: String(data.customer?.name ?? ""),
+            email: String(data.customer?.email ?? ""),
+            phone: String(data.customer?.phone ?? ""),
+          },
+          dropOff: {
+            date: String(data.dropOff?.date ?? ""),
+            time: String(data.dropOff?.time ?? ""),
+            datetime: data.dropOff?.datetime ?? null,
+          },
+          pickUp: {
+            date: String(data.pickUp?.date ?? ""),
+            time: String(data.pickUp?.time ?? ""),
+            datetime: data.pickUp?.datetime ?? null,
+          },
           billableDays: Number(data.billableDays ?? 0),
-          bags: data.bags,
+          bags: {
+            small: Number(data.bags?.small ?? 0),
+            medium: Number(data.bags?.medium ?? 0),
+            large: Number(data.bags?.large ?? 0),
+          },
           totalPaid: Number(data.totalPaid ?? 0),
           currency: String(data.currency ?? "EUR"),
           status: data.status,
-          notes: data.notes ?? "",
+          notes: data.notes ?? data.dropOff?.notes ?? "",
           walletIssued: Boolean(data.walletIssued ?? false),
+          // Helper for breakdown calculation
+          _isArchive: snapshot.query._query?.path?.segments?.includes('bookings_archive')
         };
       });
 
@@ -70,47 +88,57 @@ const ReportsPage: React.FC = () => {
     fetchAllData();
   }, []);
 
-  const bookings = useMemo(() => [...activeBookings, ...archivedBookings], [activeBookings, archivedBookings]);
-
   const stats = useMemo(() => {
-    const filtered = bookings.filter(b => {
-      const bDate = b.dropOff.date; // Filtering by dropOff date for revenue reporting
+    const filterFn = (b: Booking) => {
+      const bDate = b.dropOff.date;
       if (mode === 'day') return bDate === selectedDate;
       if (mode === 'month') return bDate.startsWith(selectedDate);
       if (mode === 'year') return bDate.startsWith(selectedDate.substring(0, 4));
       return false;
-    });
-
-    const totalBookings = filtered.length;
-    const revenue = filtered.reduce((acc, b) => b.status !== 'cancelled' ? acc + b.totalPaid : acc, 0);
-    
-    const byStatus = {
-      paid: filtered.filter(b => b.status === 'paid').length,
-      checked_in: filtered.filter(b => b.status === 'checked_in').length,
-      picked_up: filtered.filter(b => b.status === 'picked_up').length,
-      cancelled: filtered.filter(b => b.status === 'cancelled').length,
     };
 
-    return { totalBookings, revenue, byStatus };
-  }, [bookings, mode, selectedDate]);
+    const activeFiltered = activeBookings.filter(filterFn);
+    const archivedFiltered = archivedBookings.filter(filterFn);
+    const combined = [...activeFiltered, ...archivedFiltered];
+
+    const totalBookings = combined.length;
+    const revenue = combined.reduce((acc, b) => b.status !== 'cancelled' ? acc + b.totalPaid : acc, 0);
+    
+    const activeRevenue = activeFiltered.reduce((acc, b) => b.status !== 'cancelled' ? acc + b.totalPaid : acc, 0);
+    const archivedRevenue = archivedFiltered.reduce((acc, b) => b.status !== 'cancelled' ? acc + b.totalPaid : acc, 0);
+
+    const byStatus = {
+      paid: combined.filter(b => b.status === 'paid').length,
+      checked_in: combined.filter(b => b.status === 'checked_in').length,
+      picked_up: combined.filter(b => b.status === 'picked_up').length,
+      cancelled: combined.filter(b => b.status === 'cancelled').length,
+    };
+
+    return { 
+      totalBookings, 
+      revenue, 
+      byStatus,
+      breakdown: {
+        active: { count: activeFiltered.length, rev: activeRevenue },
+        archived: { count: archivedFiltered.length, rev: archivedRevenue }
+      }
+    };
+  }, [activeBookings, archivedBookings, mode, selectedDate]);
 
   const handleArchiveAll = async () => {
     if (!window.confirm("Archive all checked-out bookings older than 7 days?")) return;
-    
     setArchiving(true);
     setArchiveStatus({message: '', type: null});
-    
     try {
       const response = await fetch('/api/archive/picked-up', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ days: 7 })
       });
-      
       const data = await response.json();
       if (response.ok) {
         setArchiveStatus({message: `Success! Archived ${data.count} bookings.`, type: 'success'});
-        fetchAllData(); // Refresh list
+        fetchAllData();
       } else {
         setArchiveStatus({message: data.error || 'Archive failed.', type: 'error'});
       }
@@ -147,7 +175,6 @@ const ReportsPage: React.FC = () => {
             <p className="text-slate-500">Analyze combined revenue from active and archived bookings</p>
         </div>
 
-        {/* Report Filters */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
            <div className="flex bg-white p-1.5 rounded-2xl border border-slate-200 shadow-sm w-fit">
               {(['day', 'month', 'year'] as const).map(m => (
@@ -165,7 +192,6 @@ const ReportsPage: React.FC = () => {
                 </button>
               ))}
            </div>
-
            <div className="flex items-center gap-3">
               <input 
                 type={mode === 'day' ? 'date' : mode === 'month' ? 'month' : 'number'}
@@ -179,26 +205,30 @@ const ReportsPage: React.FC = () => {
            </div>
         </div>
 
-        {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
            <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Total Revenue</p>
               <p className="text-4xl font-black text-emerald-600">{stats.revenue.toLocaleString()} EUR</p>
-              <p className="text-xs text-slate-400 mt-2">Combined active & archived</p>
+              <div className="mt-3 space-y-1">
+                 <p className="text-[10px] text-slate-500 flex justify-between"><span>Active:</span> <span className="font-bold">{stats.breakdown.active.rev} EUR</span></p>
+                 <p className="text-[10px] text-slate-500 flex justify-between"><span>Archived:</span> <span className="font-bold">{stats.breakdown.archived.rev} EUR</span></p>
+              </div>
            </div>
            <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Total Bookings</p>
               <p className="text-4xl font-black text-slate-900">{stats.totalBookings}</p>
-              <p className="text-xs text-slate-400 mt-2">Historical volume total</p>
+              <div className="mt-3 space-y-1">
+                 <p className="text-[10px] text-slate-500 flex justify-between"><span>Active:</span> <span className="font-bold">{stats.breakdown.active.count}</span></p>
+                 <p className="text-[10px] text-slate-500 flex justify-between"><span>Archived:</span> <span className="font-bold">{stats.breakdown.archived.count}</span></p>
+              </div>
            </div>
            <div className="bg-slate-900 p-8 rounded-3xl text-white shadow-xl shadow-slate-200">
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Avg. Per Booking</p>
               <p className="text-4xl font-black">{stats.totalBookings > 0 ? (stats.revenue / stats.totalBookings).toFixed(2) : '0'} <span className="text-lg opacity-50">EUR</span></p>
-              <p className="text-xs text-slate-500 mt-2">Revenue / Bookings ratio</p>
+              <p className="text-xs text-slate-500 mt-2">Combined lifecycle average</p>
            </div>
         </div>
 
-        {/* Status Breakdown */}
         <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden mb-12">
            <div className="p-6 border-b border-slate-50">
               <h3 className="font-bold text-slate-900">Status Distribution (Combined)</h3>
@@ -223,12 +253,11 @@ const ReportsPage: React.FC = () => {
            </div>
         </div>
 
-        {/* Maintenance Section */}
         <div className="bg-orange-50 border border-orange-100 rounded-3xl p-8">
            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
               <div className="max-w-lg">
                  <h3 className="text-orange-900 font-bold text-lg mb-1">Database Maintenance</h3>
-                 <p className="text-orange-700 text-sm">Archiving is now immediate on checkout. Use this tool only to catch up on legacy data in the active collection.</p>
+                 <p className="text-orange-700 text-sm">Use this tool to archive legacy picked-up data that wasn't automatically moved to the archive collection.</p>
               </div>
               <div>
                  <button 
