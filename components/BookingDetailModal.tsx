@@ -72,15 +72,15 @@ const BookingDetailModal: React.FC<BookingDetailModalProps> = ({ booking, onClos
       {/* Background overlay */}
       <div className="absolute inset-0" onClick={onClose}></div>
       
-      <div className="relative bg-white rounded-t-[2.5rem] sm:rounded-[2rem] shadow-2xl w-full max-w-2xl h-[92vh] sm:h-auto sm:max-h-[85vh] flex flex-col animate-in slide-in-from-bottom duration-300">
+      <div className="relative bg-white rounded-t-[2.5rem] sm:rounded-[2rem] shadow-2xl w-full max-w-2xl h-[92vh] sm:h-auto sm:max-h-[85vh] flex flex-col animate-in slide-in-from-bottom duration-300 overflow-hidden">
         
         {/* Mobile Sheet Handle */}
-        <div className="sm:hidden w-full flex justify-center pt-3 pb-1">
+        <div className="sm:hidden w-full flex-none flex justify-center pt-3 pb-1">
            <div className="w-12 h-1.5 bg-slate-200 rounded-full"></div>
         </div>
 
-        {/* Header - Fixed */}
-        <div className="flex-none px-6 py-5 flex items-center justify-between border-b border-slate-50">
+        {/* Header - Fixed (flex-none) */}
+        <div className="flex-none px-6 py-4 flex items-center justify-between border-b border-slate-50 bg-white">
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-xl font-black text-slate-900">#{booking.bookingRef}</h2>
@@ -93,74 +93,74 @@ const BookingDetailModal: React.FC<BookingDetailModalProps> = ({ booking, onClos
           </button>
         </div>
 
-        {/* Scrollable Content Area */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-8 pb-56 sm:pb-8 custom-scrollbar">
+        {/* Scrollable Content Area - Use flex-1 min-h-0 to force internal scroll */}
+        <div className="flex-1 min-h-0 overflow-y-auto p-6 space-y-6 pb-[240px] sm:pb-8 custom-scrollbar">
           
           {/* Profile Header */}
-          <div className="bg-slate-900 rounded-3xl p-6 text-white shadow-xl shadow-slate-200">
+          <div className="bg-slate-900 rounded-3xl p-6 text-white shadow-lg">
              <div className="flex justify-between items-start mb-4">
                 <StatusBadge status={booking.status} />
                 <p className="text-[10px] font-black opacity-50 uppercase tracking-widest">Deposit Active</p>
              </div>
-             <h3 className="text-2xl font-black mb-1 truncate">{booking.customer.name}</h3>
-             <p className="text-slate-400 text-sm font-medium mb-4 truncate">{booking.customer.email}</p>
+             <h3 className="text-xl font-black mb-1 truncate">{booking.customer.name}</h3>
+             <p className="text-slate-400 text-xs font-medium mb-4 truncate">{booking.customer.email}</p>
              <div className="flex items-center gap-2 text-blue-400 font-black text-sm">
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
                 {booking.customer.phone}
              </div>
           </div>
 
-          {/* Logistics Grid */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="p-5 bg-blue-50/50 rounded-3xl border border-blue-100/50">
-              <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest mb-2">Drop-off</p>
-              <p className="font-black text-slate-900 text-sm">{booking.dropOff.date}</p>
-              <p className="text-[10px] text-blue-600 font-bold">{booking.dropOff.time}</p>
+          {/* Logistics Grid - Ensure visibility */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="p-4 bg-blue-50/50 rounded-2xl border border-blue-100/50">
+              <p className="text-[8px] font-black text-blue-400 uppercase tracking-widest mb-1">Drop-off</p>
+              <p className="font-black text-slate-900 text-xs">{booking.dropOff.date}</p>
+              <p className="text-[9px] text-blue-600 font-bold">{booking.dropOff.time}</p>
             </div>
-            <div className="p-5 bg-emerald-50/50 rounded-3xl border border-emerald-100/50">
-              <p className="text-[9px] font-black text-emerald-400 uppercase tracking-widest mb-2">Pick-up</p>
-              <p className="font-black text-slate-900 text-sm">{booking.pickUp.date}</p>
-              <p className="text-[10px] text-emerald-600 font-bold">{booking.pickUp.time}</p>
+            <div className="p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100/50">
+              <p className="text-[8px] font-black text-emerald-400 uppercase tracking-widest mb-1">Pick-up</p>
+              <p className="font-black text-slate-900 text-xs">{booking.pickUp.date}</p>
+              <p className="text-[9px] text-emerald-600 font-bold">{booking.pickUp.time}</p>
             </div>
           </div>
 
           {/* Bag Inventory */}
-          <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100">
-             <div className="flex justify-between items-center mb-4">
-                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Inventory</h4>
-                <span className="text-xs font-black text-slate-900">{booking.bags.small + booking.bags.medium + booking.bags.large} Items</span>
+          <div className="bg-slate-50 p-5 rounded-3xl border border-slate-100">
+             <div className="flex justify-between items-center mb-3">
+                <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Inventory</h4>
+                <span className="text-[10px] font-black text-slate-900">{booking.bags.small + booking.bags.medium + booking.bags.large} Items</span>
              </div>
              <div className="grid grid-cols-3 gap-2">
-                <div className="text-center p-3 bg-white rounded-2xl border border-slate-100 shadow-sm">
-                   <p className="text-lg font-black text-slate-900">{booking.bags.small}</p>
-                   <p className="text-[8px] font-bold text-slate-400 uppercase">S</p>
+                <div className="text-center p-2 bg-white rounded-xl border border-slate-100">
+                   <p className="text-base font-black text-slate-900">{booking.bags.small}</p>
+                   <p className="text-[7px] font-bold text-slate-400 uppercase">S</p>
                 </div>
-                <div className="text-center p-3 bg-white rounded-2xl border border-slate-100 shadow-sm">
-                   <p className="text-lg font-black text-slate-900">{booking.bags.medium}</p>
-                   <p className="text-[8px] font-bold text-slate-400 uppercase">M</p>
+                <div className="text-center p-2 bg-white rounded-xl border border-slate-100">
+                   <p className="text-base font-black text-slate-900">{booking.bags.medium}</p>
+                   <p className="text-[7px] font-bold text-slate-400 uppercase">M</p>
                 </div>
-                <div className="text-center p-3 bg-white rounded-2xl border border-slate-100 shadow-sm">
-                   <p className="text-lg font-black text-slate-900">{booking.bags.large}</p>
-                   <p className="text-[8px] font-bold text-slate-400 uppercase">L</p>
+                <div className="text-center p-2 bg-white rounded-xl border border-slate-100">
+                   <p className="text-base font-black text-slate-900">{booking.bags.large}</p>
+                   <p className="text-[7px] font-bold text-slate-400 uppercase">L</p>
                 </div>
              </div>
           </div>
 
           {/* Memo Section */}
           {!isArchived && (
-            <div className="space-y-3">
-              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Staff Memo</h4>
-              <div className="relative group">
+            <div className="space-y-2">
+              <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Staff Memo</h4>
+              <div className="relative">
                 <textarea
-                  className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-3xl h-24 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-50 outline-none transition-all text-sm font-medium placeholder:text-slate-300 resize-none"
-                  placeholder="Storage details..."
+                  className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl h-20 focus:border-blue-500 focus:bg-white outline-none transition-all text-sm font-medium placeholder:text-slate-300 resize-none"
+                  placeholder="Details..."
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                 />
                 <button 
                   onClick={saveNotes} 
                   disabled={updating}
-                  className="absolute bottom-3 right-3 px-4 py-2 bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-black active:scale-95 disabled:opacity-30 transition-all shadow-lg"
+                  className="absolute bottom-2 right-2 px-3 py-1.5 bg-slate-900 text-white text-[9px] font-black uppercase tracking-widest rounded-lg disabled:opacity-30"
                 >
                   {updating ? '...' : 'Save'}
                 </button>
@@ -169,18 +169,17 @@ const BookingDetailModal: React.FC<BookingDetailModalProps> = ({ booking, onClos
           )}
         </div>
 
-        {/* STICKY BOTTOM ACTIONS (Refined for Thumb-Reach) */}
+        {/* STICKY BOTTOM ACTIONS - standardized sizing */}
         {!isArchived && (
-          <div className="flex-none p-5 pb-10 sm:p-8 bg-white border-t border-slate-100 shadow-[0_-20px_40px_rgba(0,0,0,0.06)] rounded-t-[2.5rem] sm:rounded-none z-20">
-            <div className="flex flex-col gap-4 sm:flex-row sm:gap-3">
-              {/* Primary High-Impact Actions */}
+          <div className="flex-none p-4 pb-8 sm:p-6 bg-white border-t border-slate-100 shadow-[0_-10px_30px_rgba(0,0,0,0.05)] rounded-t-[2.5rem] sm:rounded-none z-20">
+            <div className="flex flex-col gap-3 sm:flex-row sm:gap-3 max-w-lg mx-auto">
               <button 
                 onClick={() => updateStatus('checked_in')}
                 disabled={updating || booking.status !== 'paid'}
-                className={`w-full h-16 sm:h-14 rounded-2xl text-lg sm:text-base font-black transition-all active:scale-95 
+                className={`w-full h-14 rounded-xl text-base font-black transition-all active:scale-95 
                   ${booking.status === 'paid' 
-                    ? 'bg-blue-600 text-white shadow-2xl shadow-blue-500/30' 
-                    : 'bg-slate-50 text-slate-300 border border-slate-100 opacity-40 shadow-none pointer-events-none'}`}
+                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' 
+                    : 'bg-slate-50 text-slate-300 border border-slate-100 opacity-40 pointer-events-none'}`}
               >
                 Mark Checked In
               </button>
@@ -188,10 +187,10 @@ const BookingDetailModal: React.FC<BookingDetailModalProps> = ({ booking, onClos
               <button 
                 onClick={() => updateStatus('picked_up')}
                 disabled={updating || booking.status !== 'checked_in'}
-                className={`w-full h-16 sm:h-14 rounded-2xl text-lg sm:text-base font-black transition-all active:scale-95
+                className={`w-full h-14 rounded-xl text-base font-black transition-all active:scale-95
                   ${booking.status === 'checked_in'
-                    ? 'bg-emerald-600 text-white shadow-2xl shadow-emerald-500/30'
-                    : 'bg-slate-50 text-slate-300 border border-slate-100 opacity-40 shadow-none pointer-events-none'}`}
+                    ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/20'
+                    : 'bg-slate-50 text-slate-300 border border-slate-100 opacity-40 pointer-events-none'}`}
               >
                 Mark Picked Up
               </button>
@@ -199,16 +198,13 @@ const BookingDetailModal: React.FC<BookingDetailModalProps> = ({ booking, onClos
               <button 
                 onClick={() => updateStatus('cancelled')}
                 disabled={updating || booking.status === 'picked_up' || booking.status === 'cancelled'}
-                className="w-full sm:w-auto px-6 h-14 bg-slate-50 text-slate-400 rounded-2xl text-sm font-black hover:bg-red-50 hover:text-red-600 active:scale-95 disabled:opacity-20 disabled:pointer-events-none transition-all"
+                className="w-full sm:w-auto px-6 h-12 bg-slate-50 text-slate-400 rounded-xl text-xs font-black hover:bg-red-50 hover:text-red-600 active:scale-95 disabled:opacity-20 transition-all"
               >
-                Cancel Booking
+                Cancel
               </button>
             </div>
           </div>
         )}
-
-        {/* Browser Safe Area */}
-        <div className="h-4 sm:hidden bg-white"></div>
       </div>
     </div>
   );
