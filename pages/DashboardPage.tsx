@@ -20,6 +20,7 @@ const DashboardPage: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<BookingStatus | 'all'>('all');
   const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [queryError, setQueryError] = useState<string | null>(null);
 
   const logoUrl = "https://cdn.shopify.com/s/files/1/0753/8144/0861/files/cropped-Untitled-design-2025-09-11T094640.576_1.png?v=1765462614&width=160&format=webp";
 
@@ -30,64 +31,72 @@ const DashboardPage: React.FC = () => {
 
   useEffect(() => {
     setLoading(true);
+    setQueryError(null);
     const collectionName = viewMode === 'active' ? "bookings" : "bookings_archive";
-    // Fix 1: Use archivedAt for archive mode ordering
     const sortField = viewMode === 'active' ? "createdAt" : "archivedAt";
-    const q = query(collection(db, collectionName), orderBy(sortField, "desc"));
+    
+    try {
+      const q = query(collection(db, collectionName), orderBy(sortField, "desc"));
 
-    const unsubscribe = onSnapshot(
-      q,
-      (snapshot) => {
-        const docs: Booking[] = snapshot.docs.map((d) => {
-          const data: any = d.data();
-          // Safe defensive mapping
-          return {
-            id: d.id,
-            bookingRef: String(data.bookingRef ?? ""),
-            stripeSessionId: String(data.stripeSessionId ?? ""),
-            createdAt: data.createdAt ?? null,
-            archivedAt: data.archivedAt ?? null,
-            bookedOnRome: "",
-            customer: {
-              name: String(data.customer?.name ?? ""),
-              email: String(data.customer?.email ?? ""),
-              phone: String(data.customer?.phone ?? ""),
-            },
-            dropOff: {
-              date: String(data.dropOff?.date ?? ""),
-              time: String(data.dropOff?.time ?? ""),
-              datetime: data.dropOff?.datetime ?? null,
-            },
-            pickUp: {
-              date: String(data.pickUp?.date ?? ""),
-              time: String(data.pickUp?.time ?? ""),
-              datetime: data.pickUp?.datetime ?? null,
-            },
-            billableDays: Number(data.billableDays ?? 0),
-            bags: {
-              small: Number(data.bags?.small ?? 0),
-              medium: Number(data.bags?.medium ?? 0),
-              large: Number(data.bags?.large ?? 0),
-            },
-            totalPaid: Number(data.totalPaid ?? 0),
-            currency: String(data.currency ?? "EUR"),
-            status: (data.status ?? "paid") as any,
-            notes: String(data.notes ?? data.dropOff?.notes ?? ""),
-            walletIssued: Boolean(data.walletIssued ?? false),
-          };
-        });
+      const unsubscribe = onSnapshot(
+        q,
+        (snapshot) => {
+          const docs: Booking[] = snapshot.docs.map((d) => {
+            const data: any = d.data();
+            return {
+              id: d.id,
+              bookingRef: String(data.bookingRef ?? ""),
+              stripeSessionId: String(data.stripeSessionId ?? ""),
+              createdAt: data.createdAt ?? null,
+              archivedAt: data.archivedAt ?? null,
+              bookedOnRome: "",
+              customer: {
+                name: String(data.customer?.name ?? ""),
+                email: String(data.customer?.email ?? ""),
+                phone: String(data.customer?.phone ?? ""),
+              },
+              dropOff: {
+                date: String(data.dropOff?.date ?? ""),
+                time: String(data.dropOff?.time ?? ""),
+                datetime: data.dropOff?.datetime ?? null,
+              },
+              pickUp: {
+                date: String(data.pickUp?.date ?? ""),
+                time: String(data.pickUp?.time ?? ""),
+                datetime: data.pickUp?.datetime ?? null,
+              },
+              billableDays: Number(data.billableDays ?? 0),
+              bags: {
+                small: Number(data.bags?.small ?? 0),
+                medium: Number(data.bags?.medium ?? 0),
+                large: Number(data.bags?.large ?? 0),
+              },
+              totalPaid: Number(data.totalPaid ?? 0),
+              currency: String(data.currency ?? "EUR"),
+              status: (data.status ?? "paid") as any,
+              notes: String(data.notes ?? data.dropOff?.notes ?? ""),
+              walletIssued: Boolean(data.walletIssued ?? false),
+            };
+          });
 
-        setBookings(docs);
-        setLoading(false);
-      },
-      (err) => {
-        console.error(`Firestore ${collectionName} snapshot error:`, err);
-        setBookings([]);
-        setLoading(false);
-      }
-    );
+          setBookings(docs);
+          setLoading(false);
+          setQueryError(null);
+        },
+        (err) => {
+          console.error(`Firestore ${collectionName} snapshot error:`, err);
+          setQueryError(`${err.name}: ${err.message}`);
+          setBookings([]);
+          setLoading(false);
+        }
+      );
 
-    return () => unsubscribe();
+      return () => unsubscribe();
+    } catch (err: any) {
+      setQueryError(err.message);
+      setLoading(false);
+      return () => {};
+    }
   }, [viewMode]);
 
   const filteredBookings = useMemo(() => {
@@ -147,6 +156,19 @@ const DashboardPage: React.FC = () => {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 mt-6">
+        {queryError && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-2xl text-red-700 animate-in fade-in slide-in-from-top-4 duration-300">
+            <div className="flex items-center gap-2 mb-1">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              <h3 className="font-bold text-sm uppercase tracking-wider">Database Error</h3>
+            </div>
+            <p className="text-xs font-mono break-words">{queryError}</p>
+            {queryError.includes('index') && (
+              <p className="text-[10px] mt-2 opacity-75 italic">This usually means a Firestore composite index is being created. Please wait a minute or click the link in the console to create it.</p>
+            )}
+          </div>
+        )}
+
         <div className="sm:hidden mb-6 flex flex-col gap-3">
           <button 
             onClick={() => navigate('/scan')}

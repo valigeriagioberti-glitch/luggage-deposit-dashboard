@@ -8,11 +8,16 @@ import { signOut } from 'firebase/auth';
 
 type ReportMode = 'day' | 'month' | 'year';
 
+interface ExtendedBooking extends Booking {
+  _isArchive: boolean;
+}
+
 const ReportsPage: React.FC = () => {
   const navigate = useNavigate();
-  const [activeBookings, setActiveBookings] = useState<Booking[]>([]);
-  const [archivedBookings, setArchivedBookings] = useState<Booking[]>([]);
+  const [activeBookings, setActiveBookings] = useState<ExtendedBooking[]>([]);
+  const [archivedBookings, setArchivedBookings] = useState<ExtendedBooking[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [mode, setMode] = useState<ReportMode>('month');
   const [selectedDate, setSelectedDate] = useState(() => {
     const d = new Date();
@@ -26,6 +31,7 @@ const ReportsPage: React.FC = () => {
 
   const fetchAllData = async () => {
     setLoading(true);
+    setError(null);
     try {
       const qActive = query(collection(db, "bookings"), orderBy("createdAt", "desc"));
       const qArchive = query(collection(db, "bookings_archive"), orderBy("createdAt", "desc"));
@@ -35,50 +41,51 @@ const ReportsPage: React.FC = () => {
         getDocs(qArchive)
       ]);
 
-      const mapDocs = (snapshot: any) => snapshot.docs.map((d: any) => {
-        const data: any = d.data();
-        return {
-          id: d.id,
-          bookingRef: String(data.bookingRef ?? ""),
-          stripeSessionId: String(data.stripeSessionId ?? ""),
-          createdAt: data.createdAt ?? null,
-          archivedAt: data.archivedAt ?? null,
-          bookedOnRome: "",
-          customer: {
-            name: String(data.customer?.name ?? ""),
-            email: String(data.customer?.email ?? ""),
-            phone: String(data.customer?.phone ?? ""),
-          },
-          dropOff: {
-            date: String(data.dropOff?.date ?? ""),
-            time: String(data.dropOff?.time ?? ""),
-            datetime: data.dropOff?.datetime ?? null,
-          },
-          pickUp: {
-            date: String(data.pickUp?.date ?? ""),
-            time: String(data.pickUp?.time ?? ""),
-            datetime: data.pickUp?.datetime ?? null,
-          },
-          billableDays: Number(data.billableDays ?? 0),
-          bags: {
-            small: Number(data.bags?.small ?? 0),
-            medium: Number(data.bags?.medium ?? 0),
-            large: Number(data.bags?.large ?? 0),
-          },
-          totalPaid: Number(data.totalPaid ?? 0),
-          currency: String(data.currency ?? "EUR"),
-          status: data.status,
-          notes: data.notes ?? data.dropOff?.notes ?? "",
-          walletIssued: Boolean(data.walletIssued ?? false),
-          // Helper for breakdown calculation
-          _isArchive: snapshot.query._query?.path?.segments?.includes('bookings_archive')
-        };
-      });
+      const mapDocs = (snapshot: any, isArchive: boolean): ExtendedBooking[] => 
+        snapshot.docs.map((d: any) => {
+          const data: any = d.data();
+          return {
+            id: d.id,
+            bookingRef: String(data.bookingRef ?? ""),
+            stripeSessionId: String(data.stripeSessionId ?? ""),
+            createdAt: data.createdAt ?? null,
+            archivedAt: data.archivedAt ?? null,
+            bookedOnRome: "",
+            customer: {
+              name: String(data.customer?.name ?? ""),
+              email: String(data.customer?.email ?? ""),
+              phone: String(data.customer?.phone ?? ""),
+            },
+            dropOff: {
+              date: String(data.dropOff?.date ?? ""),
+              time: String(data.dropOff?.time ?? ""),
+              datetime: data.dropOff?.datetime ?? null,
+            },
+            pickUp: {
+              date: String(data.pickUp?.date ?? ""),
+              time: String(data.pickUp?.time ?? ""),
+              datetime: data.pickUp?.datetime ?? null,
+            },
+            billableDays: Number(data.billableDays ?? 0),
+            bags: {
+              small: Number(data.bags?.small ?? 0),
+              medium: Number(data.bags?.medium ?? 0),
+              large: Number(data.bags?.large ?? 0),
+            },
+            totalPaid: Number(data.totalPaid ?? 0),
+            currency: String(data.currency ?? "EUR"),
+            status: data.status,
+            notes: data.notes ?? data.dropOff?.notes ?? "",
+            walletIssued: Boolean(data.walletIssued ?? false),
+            _isArchive: isArchive
+          };
+        });
 
-      setActiveBookings(mapDocs(snapActive));
-      setArchivedBookings(mapDocs(snapArchive));
-    } catch (err) {
+      setActiveBookings(mapDocs(snapActive, false));
+      setArchivedBookings(mapDocs(snapArchive, true));
+    } catch (err: any) {
       console.error("Error fetching report data:", err);
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setLoading(false);
     }
@@ -89,7 +96,7 @@ const ReportsPage: React.FC = () => {
   }, []);
 
   const stats = useMemo(() => {
-    const filterFn = (b: Booking) => {
+    const filterFn = (b: ExtendedBooking) => {
       const bDate = b.dropOff.date;
       if (mode === 'day') return bDate === selectedDate;
       if (mode === 'month') return bDate.startsWith(selectedDate);
@@ -170,6 +177,16 @@ const ReportsPage: React.FC = () => {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 mt-6">
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-2xl text-red-700 animate-in fade-in slide-in-from-top-4 duration-300">
+            <div className="flex items-center gap-2 mb-1">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              <h3 className="font-bold text-sm uppercase tracking-wider">Reports Data Error</h3>
+            </div>
+            <p className="text-xs font-mono break-words">{error}</p>
+          </div>
+        )}
+
         <div className="mb-8">
             <h2 className="text-2xl font-bold text-slate-900">Performance Stats</h2>
             <p className="text-slate-500">Analyze combined revenue from active and archived bookings</p>
