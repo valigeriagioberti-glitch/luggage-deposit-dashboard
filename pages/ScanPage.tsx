@@ -35,13 +35,13 @@ const ScanPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [scanFeedback, setScanFeedback] = useState<string | null>(null);
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [cameraPermissionError, setCameraPermissionError] = useState(false);
   const html5QrCodeRef = useRef<Html5Qrcode | null>(null);
 
   // Auto-start camera on mount
   useEffect(() => {
-    // Lock body scroll for mobile app feel
     document.body.style.overflow = 'hidden';
     
     if (!bookingRef) {
@@ -56,29 +56,45 @@ const ScanPage: React.FC = () => {
     };
   }, []);
 
-  const extractBookingRef = (input: string): string => {
+  const extractBookingRef = (input: string): string | null => {
     let cleanInput = input.trim();
-    if (cleanInput.includes('ref=')) {
+    
+    // Case 1: URL containing ref=
+    if (cleanInput.toLowerCase().includes('ref=')) {
       try {
         const normalized = cleanInput.replace('/#/', '/');
         const url = new URL(normalized);
         const param = url.searchParams.get('ref');
         if (param) return param.toUpperCase();
       } catch (e) {
-        const parts = cleanInput.split('ref=');
+        const parts = cleanInput.split(/[?&]ref=/i);
         if (parts.length > 1) return parts[1].split('&')[0].toUpperCase();
       }
     }
-    return cleanInput.toUpperCase();
+
+    // Case 2: Raw alphanumeric string (6-12 chars)
+    const refRegex = /^[A-Z0-9]{6,12}$/i;
+    if (refRegex.test(cleanInput)) {
+      return cleanInput.toUpperCase();
+    }
+
+    return null;
   };
 
   const validateAndProcessInput = (rawInput: string) => {
     setError(null);
+    setScanFeedback(`Scanned: ${rawInput.length > 20 ? rawInput.substring(0, 17) + '...' : rawInput}`);
+    
+    // Clear feedback toast after 2 seconds
+    setTimeout(() => setScanFeedback(null), 2000);
+
     const extracted = extractBookingRef(rawInput);
-    if (extracted.length < 4) {
-      setError("Reference too short.");
+    
+    if (!extracted) {
+      setError("Not a booking QR. Please scan the customer booking QR.");
       return;
     }
+
     setBookingRef(extracted);
     lookupBooking(extracted);
   };
@@ -197,6 +213,13 @@ const ScanPage: React.FC = () => {
       </div>
 
       <div className="flex-1 relative bg-slate-950 flex flex-col justify-center items-center">
+        {/* Scan Feedback Toast */}
+        {scanFeedback && (
+          <div className="absolute top-8 left-1/2 -translate-x-1/2 z-50 bg-white/10 backdrop-blur-md border border-white/20 px-4 py-2 rounded-full text-[10px] font-black uppercase text-white tracking-widest animate-in fade-in slide-in-from-top-2">
+            {scanFeedback}
+          </div>
+        )}
+
         {successMessage ? (
           <div className="w-full max-w-sm px-8 text-center animate-in zoom-in duration-300">
             <div className="w-24 h-24 bg-emerald-500/20 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-8 border border-emerald-500/30">
@@ -335,7 +358,7 @@ const ScanPage: React.FC = () => {
 
                {error && (
                  <div className="mt-4 p-4 bg-red-500/10 text-red-500 rounded-2xl text-[10px] font-black uppercase tracking-widest text-center animate-in fade-in">
-                    Error: {error}
+                    {error}
                  </div>
                )}
             </div>

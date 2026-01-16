@@ -126,7 +126,7 @@ const DashboardPage: React.FC = () => {
   const handleLogout = () => signOut(auth);
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-24 sm:pb-32 overflow-x-hidden flex flex-col">
+    <div className="min-h-screen bg-slate-50 pb-32 sm:pb-32 overflow-x-hidden flex flex-col">
       {/* App Header */}
       <header className="bg-white border-b border-slate-100 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
@@ -196,20 +196,18 @@ const DashboardPage: React.FC = () => {
 
           {/* HIERARCHICAL FILTERS */}
           <div className="space-y-4">
-            {/* Primary Filter Row */}
             <div className="flex flex-wrap gap-2">
               {(['all', 'today', 'upcoming', 'past'] as const).map((f) => (
                 <button
                   key={f}
                   onClick={() => setDateFilter(f)}
-                  className={`px-5 py-2.5 text-[10px] font-black rounded-2xl border-2 transition-all capitalize shadow-sm ${dateFilter === f ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-500/20' : 'bg-white border-slate-100 text-slate-500 hover:border-slate-300'}`}
+                  className={`px-5 py-2.5 text-[10px] font-black rounded-2xl border-2 transition-all capitalize shadow-sm ${dateFilter === f ? 'bg-blue-600 border-blue-600 text-white shadow-xl shadow-blue-500/20' : 'bg-white border-slate-100 text-slate-500 hover:border-slate-300'}`}
                 >
                   {f}
                 </button>
               ))}
             </div>
 
-            {/* Secondary Filter Row */}
             <div className="flex flex-wrap gap-2">
               {(['all', 'paid', 'checked_in', 'picked_up', 'cancelled'] as const).map((s) => (
                 <button
@@ -224,8 +222,8 @@ const DashboardPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Data Container - Table fixed for mobile, no horizontal scroll */}
-        <div className="bg-white rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/50 overflow-hidden min-h-[400px]">
+        {/* Data Container - Table fixed for mobile, zero horizontal scroll */}
+        <div className="bg-white rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/50 overflow-hidden min-h-[400px] mb-8">
           {loading ? (
             <div className="flex flex-col items-center justify-center p-32 space-y-4">
                <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
@@ -236,19 +234,19 @@ const DashboardPage: React.FC = () => {
               <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-8 text-slate-200">
                  <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>
               </div>
-              <p className="text-slate-900 font-black text-xl mb-2">No Records Found</p>
-              <button onClick={() => { setSearch(''); setDateFilter('all'); setStatusFilter('all'); }} className="text-blue-600 font-black text-[10px] uppercase tracking-widest hover:underline">Clear Filters</button>
+              <p className="text-slate-900 font-black text-xl mb-2">Empty Records</p>
+              <button onClick={() => { setSearch(''); setDateFilter('all'); setStatusFilter('all'); }} className="text-blue-600 font-black text-[10px] uppercase tracking-widest hover:underline">Reset Filters</button>
             </div>
           ) : (
-            <div className="sm:overflow-x-auto overflow-x-hidden">
+            <div className="sm:overflow-x-auto overflow-hidden">
               <table className="w-full text-left border-collapse table-fixed">
                 <thead>
                   <tr className="bg-slate-50/50 text-slate-400 text-[9px] font-black uppercase tracking-[0.2em] border-b border-slate-50">
-                    <th className="px-6 py-5 w-[40%] sm:w-auto">Reference</th>
-                    <th className="px-6 py-5 w-[60%] sm:w-auto">Guest</th>
+                    <th className="px-6 py-5 w-[42%] sm:w-auto">Reference</th>
+                    <th className="px-6 py-5 w-[58%] sm:w-auto">Guest</th>
                     <th className="hidden lg:table-cell px-8 py-6">Drop-off</th>
                     <th className="hidden sm:table-cell px-8 py-6 text-center">Bags</th>
-                    <th className="hidden sm:table-cell px-8 py-6 text-right">Revenue</th>
+                    <th className="hidden sm:table-cell px-8 py-6 text-right">Total</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
@@ -259,7 +257,7 @@ const DashboardPage: React.FC = () => {
                       onClick={() => setSelectedBookingId(booking.id)}
                     >
                       <td className="px-6 py-5 align-top">
-                        <span className="font-mono font-black text-slate-900 block text-sm mb-2 group-hover:text-blue-600 transition-colors">#{booking.bookingRef}</span>
+                        <span className="font-mono font-black text-slate-900 block text-sm mb-2">#{booking.bookingRef}</span>
                         <div className="flex items-center gap-1.5">
                            <StatusBadge status={booking.status} />
                         </div>
@@ -278,8 +276,8 @@ const DashboardPage: React.FC = () => {
                         </span>
                       </td>
                       <td className="hidden sm:table-cell px-8 py-6 align-top text-right">
-                        <p className="font-black text-slate-900 text-sm mb-1">{booking.totalPaid} {booking.currency}</p>
-                        <p className="text-[9px] text-slate-400 font-bold uppercase">{booking.billableDays} Days</p>
+                        <p className="font-black text-slate-900 text-sm">{booking.totalPaid} {booking.currency}</p>
+                        <p className="text-[9px] text-slate-400 font-bold uppercase">{booking.billableDays}d</p>
                       </td>
                     </tr>
                   ))}
@@ -288,16 +286,19 @@ const DashboardPage: React.FC = () => {
             </div>
           )}
         </div>
+        
+        {/* Footer Compliance Spacer */}
+        <div className="h-32 sm:hidden"></div>
       </main>
 
-      {/* MOBILE STICKY FOOTER ACTION */}
-      <div className="sm:hidden fixed bottom-0 left-0 right-0 z-40 p-4 bg-white/80 backdrop-blur-xl border-t border-slate-100 shadow-[0_-10px_30px_rgba(0,0,0,0.05)]">
+      {/* MOBILE STICKY FOOTER ACTION (Recommended UX) */}
+      <div className="sm:hidden fixed bottom-0 left-0 right-0 z-40 p-5 bg-white/90 backdrop-blur-2xl border-t border-slate-100 shadow-[0_-15px_40px_rgba(0,0,0,0.08)]">
          <button 
            onClick={() => navigate('/scan')}
-           className="w-full h-14 bg-blue-600 text-white rounded-2xl font-black text-lg shadow-xl shadow-blue-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-3"
+           className="w-full h-16 bg-blue-600 text-white rounded-2xl font-black text-lg shadow-2xl shadow-blue-500/30 active:scale-[0.98] transition-all flex items-center justify-center gap-4"
          >
            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" /></svg>
-           SCAN QR CODE
+           SCAN
          </button>
       </div>
 
