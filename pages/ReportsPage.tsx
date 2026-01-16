@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { collection, query, onSnapshot, orderBy } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { useNavigate, Link } from 'react-router-dom';
 import { auth, db } from '../firebase';
 import { Booking } from '../types';
@@ -10,7 +10,8 @@ type ReportMode = 'day' | 'month' | 'year';
 
 const ReportsPage: React.FC = () => {
   const navigate = useNavigate();
-  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [activeBookings, setActiveBookings] = useState<Booking[]>([]);
+  const [archivedBookings, setArchivedBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [mode, setMode] = useState<ReportMode>('month');
   const [selectedDate, setSelectedDate] = useState(() => {
@@ -23,16 +24,25 @@ const ReportsPage: React.FC = () => {
 
   const logoUrl = "https://cdn.shopify.com/s/files/1/0753/8144/0861/files/cropped-Untitled-design-2025-09-11T094640.576_1.png?v=1765462614&width=160&format=webp";
 
-  useEffect(() => {
-    const q = query(collection(db, "bookings"), orderBy("createdAt", "desc"));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const docs: Booking[] = snapshot.docs.map((d) => {
+  const fetchAllData = async () => {
+    setLoading(true);
+    try {
+      const qActive = query(collection(db, "bookings"), orderBy("createdAt", "desc"));
+      const qArchive = query(collection(db, "bookings_archive"), orderBy("createdAt", "desc"));
+
+      const [snapActive, snapArchive] = await Promise.all([
+        getDocs(qActive),
+        getDocs(qArchive)
+      ]);
+
+      const mapDocs = (snapshot: any) => snapshot.docs.map((d: any) => {
         const data: any = d.data();
         return {
           id: d.id,
           bookingRef: String(data.bookingRef ?? ""),
           stripeSessionId: String(data.stripeSessionId ?? ""),
           createdAt: data.createdAt ?? null,
+          archivedAt: data.archivedAt ?? null,
           bookedOnRome: "",
           customer: data.customer,
           dropOff: data.dropOff,
@@ -46,11 +56,21 @@ const ReportsPage: React.FC = () => {
           walletIssued: Boolean(data.walletIssued ?? false),
         };
       });
-      setBookings(docs);
+
+      setActiveBookings(mapDocs(snapActive));
+      setArchivedBookings(mapDocs(snapArchive));
+    } catch (err) {
+      console.error("Error fetching report data:", err);
+    } finally {
       setLoading(false);
-    });
-    return () => unsubscribe();
+    }
+  };
+
+  useEffect(() => {
+    fetchAllData();
   }, []);
+
+  const bookings = useMemo(() => [...activeBookings, ...archivedBookings], [activeBookings, archivedBookings]);
 
   const stats = useMemo(() => {
     const filtered = bookings.filter(b => {
@@ -74,8 +94,8 @@ const ReportsPage: React.FC = () => {
     return { totalBookings, revenue, byStatus };
   }, [bookings, mode, selectedDate]);
 
-  const handleArchive = async () => {
-    if (!window.confirm("Are you sure you want to archive picked-up bookings older than 7 days? This action moves records to the archive collection and clears the main dashboard.")) return;
+  const handleArchiveAll = async () => {
+    if (!window.confirm("Archive all checked-out bookings older than 7 days?")) return;
     
     setArchiving(true);
     setArchiveStatus({message: '', type: null});
@@ -90,6 +110,7 @@ const ReportsPage: React.FC = () => {
       const data = await response.json();
       if (response.ok) {
         setArchiveStatus({message: `Success! Archived ${data.count} bookings.`, type: 'success'});
+        fetchAllData(); // Refresh list
       } else {
         setArchiveStatus({message: data.error || 'Archive failed.', type: 'error'});
       }
@@ -123,7 +144,7 @@ const ReportsPage: React.FC = () => {
       <main className="max-w-7xl mx-auto px-4 mt-6">
         <div className="mb-8">
             <h2 className="text-2xl font-bold text-slate-900">Performance Stats</h2>
-            <p className="text-slate-500">Analyze revenue and booking volume</p>
+            <p className="text-slate-500">Analyze combined revenue from active and archived bookings</p>
         </div>
 
         {/* Report Filters */}
@@ -163,12 +184,12 @@ const ReportsPage: React.FC = () => {
            <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Total Revenue</p>
               <p className="text-4xl font-black text-emerald-600">{stats.revenue.toLocaleString()} EUR</p>
-              <p className="text-xs text-slate-400 mt-2">Sum of non-cancelled payments</p>
+              <p className="text-xs text-slate-400 mt-2">Combined active & archived</p>
            </div>
            <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Total Bookings</p>
               <p className="text-4xl font-black text-slate-900">{stats.totalBookings}</p>
-              <p className="text-xs text-slate-400 mt-2">Total requests in selected period</p>
+              <p className="text-xs text-slate-400 mt-2">Historical volume total</p>
            </div>
            <div className="bg-slate-900 p-8 rounded-3xl text-white shadow-xl shadow-slate-200">
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Avg. Per Booking</p>
@@ -180,7 +201,7 @@ const ReportsPage: React.FC = () => {
         {/* Status Breakdown */}
         <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden mb-12">
            <div className="p-6 border-b border-slate-50">
-              <h3 className="font-bold text-slate-900">Status Distribution</h3>
+              <h3 className="font-bold text-slate-900">Status Distribution (Combined)</h3>
            </div>
            <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-slate-50">
               <div className="p-8 text-center">
@@ -202,20 +223,20 @@ const ReportsPage: React.FC = () => {
            </div>
         </div>
 
-        {/* Archive Section */}
+        {/* Maintenance Section */}
         <div className="bg-orange-50 border border-orange-100 rounded-3xl p-8">
            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
               <div className="max-w-lg">
                  <h3 className="text-orange-900 font-bold text-lg mb-1">Database Maintenance</h3>
-                 <p className="text-orange-700 text-sm">Keep your dashboard fast by archiving old completed records. Archived bookings are moved to the <code>bookings_archive</code> collection and removed from the active view.</p>
+                 <p className="text-orange-700 text-sm">Archiving is now immediate on checkout. Use this tool only to catch up on legacy data in the active collection.</p>
               </div>
               <div>
                  <button 
-                  onClick={handleArchive}
+                  onClick={handleArchiveAll}
                   disabled={archiving}
                   className="px-8 py-4 bg-orange-600 text-white rounded-2xl font-bold hover:bg-orange-700 transition-all disabled:opacity-50 shadow-lg shadow-orange-200 whitespace-nowrap"
                  >
-                    {archiving ? 'Archiving...' : 'Archive Picked-Up (> 7 days)'}
+                    {archiving ? 'Archiving...' : 'Run Catch-up Archive'}
                  </button>
               </div>
            </div>

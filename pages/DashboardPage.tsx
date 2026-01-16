@@ -9,9 +9,11 @@ import StatusBadge from '../components/StatusBadge';
 import BookingDetailModal from '../components/BookingDetailModal';
 
 type DateFilter = 'all' | 'today' | 'upcoming' | 'past';
+type ViewMode = 'active' | 'archived';
 
 const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
+  const [viewMode, setViewMode] = useState<ViewMode>('active');
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [search, setSearch] = useState('');
   const [dateFilter, setDateFilter] = useState<DateFilter>('all');
@@ -28,7 +30,9 @@ const DashboardPage: React.FC = () => {
   );
 
   useEffect(() => {
-    const q = query(collection(db, "bookings"), orderBy("createdAt", "desc"));
+    setLoading(true);
+    const collectionName = viewMode === 'active' ? "bookings" : "bookings_archive";
+    const q = query(collection(db, collectionName), orderBy("createdAt", "desc"));
 
     const unsubscribe = onSnapshot(
       q,
@@ -40,6 +44,7 @@ const DashboardPage: React.FC = () => {
             bookingRef: String(data.bookingRef ?? ""),
             stripeSessionId: String(data.stripeSessionId ?? ""),
             createdAt: data.createdAt ?? null,
+            archivedAt: data.archivedAt ?? null,
             bookedOnRome: "",
             customer: {
               name: String(data.customer?.name ?? ""),
@@ -74,14 +79,14 @@ const DashboardPage: React.FC = () => {
         setLoading(false);
       },
       (err) => {
-        console.error("Firestore bookings snapshot error:", err);
+        console.error(`Firestore ${collectionName} snapshot error:`, err);
         setBookings([]);
         setLoading(false);
       }
     );
 
     return () => unsubscribe();
-  }, []);
+  }, [viewMode]);
 
   const filteredBookings = useMemo(() => {
     const now = new Date();
@@ -159,11 +164,32 @@ const DashboardPage: React.FC = () => {
 
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-8">
           <div>
-            <h2 className="text-2xl font-bold text-slate-900">Manage Bookings</h2>
+            <div className="flex items-center gap-2 mb-1">
+              <h2 className="text-2xl font-bold text-slate-900">Bookings</h2>
+              <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded ${viewMode === 'active' ? 'bg-emerald-100 text-emerald-600' : 'bg-orange-100 text-orange-600'}`}>
+                {viewMode}
+              </span>
+            </div>
             <p className="text-slate-500">Track and update luggage storage requests</p>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4">
+            {/* View Toggle */}
+            <div className="flex bg-white p-1 rounded-xl border border-slate-200 shadow-sm">
+              <button 
+                onClick={() => setViewMode('active')}
+                className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${viewMode === 'active' ? 'bg-slate-900 text-white' : 'text-slate-400 hover:text-slate-600'}`}
+              >
+                Active
+              </button>
+              <button 
+                onClick={() => setViewMode('archived')}
+                className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${viewMode === 'archived' ? 'bg-slate-900 text-white' : 'text-slate-400 hover:text-slate-600'}`}
+              >
+                Archived
+              </button>
+            </div>
+
             <div className="relative">
               <input
                 type="text"
@@ -209,10 +235,10 @@ const DashboardPage: React.FC = () => {
         {/* Table/List */}
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
           {loading ? (
-            <div className="p-20 text-center text-slate-400">Loading bookings...</div>
+            <div className="p-20 text-center text-slate-400">Loading {viewMode} bookings...</div>
           ) : filteredBookings.length === 0 ? (
             <div className="p-20 text-center">
-              <p className="text-slate-500 mb-2">No bookings found matching your criteria</p>
+              <p className="text-slate-500 mb-2">No {viewMode} bookings found matching your criteria</p>
               <button onClick={() => { setSearch(''); setDateFilter('all'); setStatusFilter('all'); }} className="text-blue-600 font-semibold text-sm underline">Clear all filters</button>
             </div>
           ) : (

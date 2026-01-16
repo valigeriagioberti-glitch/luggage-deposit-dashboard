@@ -24,6 +24,7 @@ export interface Booking {
   bookingRef: string;
   stripeSessionId: string;
   createdAt: any; // Firestore Timestamp
+  archivedAt?: any; // Firestore Timestamp
   bookedOnRome: string;
   customer: Customer;
   dropOff: BookingDateTime;
