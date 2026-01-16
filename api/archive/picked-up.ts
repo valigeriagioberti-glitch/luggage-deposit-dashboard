@@ -17,8 +17,8 @@ const db = getFirestore();
 export default async function handler(req: any, res: any) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
 
-  // Default to 7 days if not provided
-  const days = req.body.days || 7;
+  // Default to 0 days if not provided
+  const days = req.body.days || 0;
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - days);
   const cutoffTimestamp = Timestamp.fromDate(cutoff);

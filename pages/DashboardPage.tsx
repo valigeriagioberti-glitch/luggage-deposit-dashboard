@@ -217,15 +217,15 @@ const DashboardPage: React.FC = () => {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse min-w-[600px]">
+              <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-slate-50 text-slate-500 text-xs font-bold uppercase tracking-wider">
-                    <th className="px-6 py-4">Ref</th>
-                    <th className="px-6 py-4">Customer</th>
-                    <th className="px-6 py-4">Drop-off</th>
-                    <th className="px-6 py-4">Bags</th>
-                    <th className="px-6 py-4">Status</th>
-                    <th className="px-6 py-4">Total</th>
+                    <th className="px-4 py-4 md:px-6">Ref</th>
+                    <th className="px-4 py-4 md:px-6">Customer</th>
+                    <th className="hidden md:table-cell px-6 py-4">Drop-off</th>
+                    <th className="hidden sm:table-cell px-6 py-4">Bags</th>
+                    <th className="hidden md:table-cell px-6 py-4">Status</th>
+                    <th className="px-4 py-4 md:px-6">Total</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -235,26 +235,33 @@ const DashboardPage: React.FC = () => {
                       className="hover:bg-slate-50/80 transition-colors cursor-pointer group"
                       onClick={() => setSelectedBookingId(booking.id)}
                     >
-                      <td className="px-6 py-4">
-                        <span className="font-mono font-bold text-slate-900">#{booking.bookingRef}</span>
+                      <td className="px-4 py-4 md:px-6 align-top">
+                        <span className="font-mono font-bold text-slate-900 block">#{booking.bookingRef}</span>
+                        {/* Mobile Details Block */}
+                        <div className="md:hidden mt-2 flex flex-col gap-1.5 items-start">
+                          <StatusBadge status={booking.status} />
+                          <p className="text-[10px] text-slate-500 font-medium">
+                            {booking.dropOff.date} {booking.dropOff.time}
+                          </p>
+                        </div>
                       </td>
-                      <td className="px-6 py-4">
-                        <p className="font-semibold text-slate-900 text-sm">{booking.customer.name}</p>
-                        <p className="text-[10px] text-slate-400">{booking.customer.email}</p>
+                      <td className="px-4 py-4 md:px-6 align-top">
+                        <p className="font-semibold text-slate-900 text-sm truncate max-w-[100px] sm:max-w-none">{booking.customer.name}</p>
+                        <p className="text-[10px] text-slate-400 hidden sm:block">{booking.customer.email}</p>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="hidden md:table-cell px-6 py-4 align-top">
                         <p className="text-sm font-medium">{booking.dropOff.date}</p>
                         <p className="text-xs text-slate-400">{booking.dropOff.time}</p>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="hidden sm:table-cell px-6 py-4 align-top">
                         <span className="text-xs px-2 py-0.5 bg-slate-100 rounded-md font-medium text-slate-700">
                           {booking.bags.small + booking.bags.medium + booking.bags.large}
                         </span>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="hidden md:table-cell px-6 py-4 align-top">
                         <StatusBadge status={booking.status} />
                       </td>
-                      <td className="px-6 py-4 font-bold text-slate-900 text-sm">
+                      <td className="px-4 py-4 md:px-6 font-bold text-slate-900 text-sm align-top">
                         {booking.totalPaid} {booking.currency.toUpperCase()}
                       </td>
                     </tr>
