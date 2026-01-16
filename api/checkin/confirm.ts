@@ -26,13 +26,23 @@ export default async function handler(req: any, res: any) {
 
     const decoded: any = jwt.verify(token, secret);
     
-    if (decoded.type !== 'checkin') {
-      return res.status(400).json({ error: 'Invalid token' });
+    if (decoded.type !== 'checkin' || !decoded.bookingRef) {
+      return res.status(400).json({ error: 'Invalid token structure' });
     }
 
-    const bookingRef = db.collection('bookings').doc(decoded.bookingId);
+    // Locate the booking by its reference
+    const bookingSnap = await db.collection('bookings')
+      .where('bookingRef', '==', decoded.bookingRef)
+      .limit(1)
+      .get();
     
-    await bookingRef.update({
+    if (bookingSnap.empty) {
+      return res.status(404).json({ error: 'Booking not found in database.' });
+    }
+
+    const bookingDocRef = bookingSnap.docs[0].ref;
+    
+    await bookingDocRef.update({
       status: 'checked_in',
       checkedInAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),

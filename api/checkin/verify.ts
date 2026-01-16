@@ -26,20 +26,26 @@ export default async function handler(req: any, res: any) {
 
     const decoded: any = jwt.verify(token, secret);
     
-    if (decoded.type !== 'checkin') {
-      return res.status(400).json({ error: 'Invalid token type' });
+    if (decoded.type !== 'checkin' || !decoded.bookingRef) {
+      return res.status(400).json({ error: 'Invalid token structure' });
     }
 
-    const bookingDoc = await db.collection('bookings').doc(decoded.bookingId).get();
+    // Query by bookingRef field instead of doc ID
+    const bookingSnap = await db.collection('bookings')
+      .where('bookingRef', '==', decoded.bookingRef)
+      .limit(1)
+      .get();
     
-    if (!bookingDoc.exists) {
-      return res.status(404).json({ error: 'Booking document not found' });
+    if (bookingSnap.empty) {
+      return res.status(404).json({ error: 'Booking not found in database.' });
     }
 
-    const data = bookingDoc.data();
+    const doc = bookingSnap.docs[0];
+    const data = doc.data();
+    
     return res.status(200).json({
       booking: {
-        id: bookingDoc.id,
+        id: doc.id,
         bookingRef: data?.bookingRef,
         customer: data?.customer,
         bags: data?.bags,
