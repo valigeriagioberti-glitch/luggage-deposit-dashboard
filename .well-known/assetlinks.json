@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.luggagedepositrome.dashboard.twa",
+      "sha256_cert_fingerprints": [
+        "CC:74:32:59:C2:C9:87:1E:E4:CD:91:05:FB:94:E7:30:37:F4:33:FF:CD:FA:DF:60:DD:72:14:F6:01:4D:A8:46"
+      ]
+    }
+  }
+]
