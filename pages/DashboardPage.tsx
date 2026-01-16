@@ -126,175 +126,164 @@ const DashboardPage: React.FC = () => {
   const handleLogout = () => signOut(auth);
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-20 sm:pb-12 overflow-x-hidden">
-      <header className="bg-white border-b sticky top-0 z-40">
+    <div className="min-h-screen bg-slate-50 pb-32 overflow-x-hidden flex flex-col">
+      {/* App Header */}
+      <header className="bg-white border-b border-slate-100 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <img src={logoUrl} alt="Logo" className="h-8 w-auto" />
-            <h1 className="font-black text-lg text-slate-900 hidden sm:block tracking-tight">Admin Terminal</h1>
+            <h1 className="font-black text-lg text-slate-900 hidden sm:block tracking-tighter uppercase">Terminal</h1>
           </div>
-          <div className="flex items-center gap-2 sm:gap-4">
-            <div className="hidden md:flex items-center gap-4 mr-4 border-r pr-4 border-slate-200">
-               <Link to="/" className="text-sm font-bold text-blue-600">Bookings</Link>
-               <Link to="/reports" className="text-sm font-bold text-slate-500 hover:text-blue-600 transition-colors">Reports</Link>
+          <div className="flex items-center gap-3">
+            <div className="hidden md:flex items-center gap-6 mr-6 border-r pr-6 border-slate-100">
+               <Link to="/" className="text-sm font-black text-blue-600 uppercase tracking-widest">Bookings</Link>
+               <Link to="/reports" className="text-sm font-black text-slate-300 hover:text-blue-600 transition-colors uppercase tracking-widest">Reports</Link>
             </div>
             <button 
-              onClick={() => navigate('/scan')}
-              className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-black hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20 active:scale-95"
-            >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" /></svg>
-              <span className="hidden sm:inline">Scan QR</span>
-            </button>
-            <button 
               onClick={handleLogout}
-              className="text-xs font-bold text-slate-400 hover:text-red-600 transition-colors px-3 py-2 hover:bg-red-50 rounded-lg"
+              className="text-[10px] font-black text-slate-400 hover:text-red-500 uppercase tracking-widest px-3 py-2 transition-all"
             >
-              Log Out
+              Sign Out
             </button>
           </div>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 mt-6">
+      <main className="max-w-7xl mx-auto px-4 mt-6 w-full flex-1">
         {queryError && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-2xl text-red-700 animate-in fade-in slide-in-from-top-4 duration-300 shadow-sm">
-            <div className="flex items-center gap-2 mb-1">
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-              <h3 className="font-bold text-xs uppercase tracking-widest">Service Alert</h3>
-            </div>
-            <p className="text-[10px] font-mono leading-relaxed opacity-80">{queryError}</p>
+          <div className="mb-6 p-4 bg-red-50 border-2 border-red-100 rounded-3xl text-red-600 animate-in fade-in duration-300 flex gap-3 items-center">
+            <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+            <p className="text-[10px] font-mono leading-relaxed">{queryError}</p>
           </div>
         )}
 
-        {/* Action Header Block */}
-        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-8">
-          <div className="space-y-1">
-            <div className="flex items-center gap-3">
-              <h2 className="text-3xl font-black text-slate-900 tracking-tight">Records</h2>
-              <div className="flex bg-slate-100 p-1 rounded-xl">
-                 <button 
-                  onClick={() => setViewMode('active')}
-                  className={`px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${viewMode === 'active' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
-                >
-                  Active
-                </button>
-                <button 
-                  onClick={() => setViewMode('archived')}
-                  className={`px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${viewMode === 'archived' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
-                >
-                  Archive
-                </button>
+        {/* Page Heading & Search */}
+        <div className="mb-10 space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-4">
+                <h2 className="text-4xl font-black text-slate-900 tracking-tight">Orders</h2>
+                <div className="bg-slate-200 p-1 rounded-2xl flex shadow-inner">
+                   <button 
+                    onClick={() => setViewMode('active')}
+                    className={`px-5 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${viewMode === 'active' ? 'bg-white text-blue-600 shadow-md' : 'text-slate-500 hover:text-slate-700'}`}
+                  >
+                    Active
+                  </button>
+                  <button 
+                    onClick={() => setViewMode('archived')}
+                    className={`px-5 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${viewMode === 'archived' ? 'bg-white text-blue-600 shadow-md' : 'text-slate-500 hover:text-slate-700'}`}
+                  >
+                    Archive
+                  </button>
+                </div>
               </div>
+              <p className="text-slate-400 font-bold text-sm tracking-tight">Real-time luggage management system</p>
             </div>
-            <p className="text-slate-500 font-medium text-sm">Reviewing {viewMode} luggage storage data</p>
-          </div>
-
-          <div className="flex flex-col sm:flex-row gap-3">
-            <div className="relative group">
+            
+            <div className="relative group w-full sm:w-auto">
               <input
                 type="text"
-                placeholder="Name, Ref, Phone..."
-                className="pl-12 pr-6 py-3.5 bg-white border-2 border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-blue-50 focus:border-blue-500 w-full sm:w-80 transition-all font-medium text-slate-700 placeholder:text-slate-300"
+                placeholder="Search Guest or Ref..."
+                className="pl-12 pr-6 py-4 bg-white border-2 border-slate-100 rounded-[1.5rem] outline-none focus:ring-4 focus:ring-blue-50 focus:border-blue-500 w-full sm:w-80 transition-all font-bold text-slate-700 placeholder:text-slate-300 shadow-sm"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
               <svg className="w-6 h-6 absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
           </div>
+
+          {/* HIERARCHICAL FILTERS */}
+          <div className="space-y-4">
+            {/* Primary Filter Row */}
+            <div className="flex flex-wrap gap-2">
+              {(['all', 'today', 'upcoming', 'past'] as const).map((f) => (
+                <button
+                  key={f}
+                  onClick={() => setDateFilter(f)}
+                  className={`px-6 py-3 text-xs font-black rounded-2xl border-2 transition-all capitalize shadow-sm ${dateFilter === f ? 'bg-blue-600 border-blue-600 text-white shadow-xl shadow-blue-500/20' : 'bg-white border-slate-100 text-slate-500 hover:border-slate-300'}`}
+                >
+                  {f}
+                </button>
+              ))}
+            </div>
+
+            {/* Secondary Filter Row */}
+            <div className="flex flex-wrap gap-2">
+              {(['all', 'paid', 'checked_in', 'picked_up', 'cancelled'] as const).map((s) => (
+                <button
+                  key={s}
+                  onClick={() => setStatusFilter(s)}
+                  className={`px-4 py-2 text-[10px] font-black rounded-xl border transition-all capitalize uppercase tracking-widest ${statusFilter === s ? 'bg-slate-900 border-slate-900 text-white shadow-lg' : 'bg-slate-50 border-slate-100 text-slate-400 hover:text-slate-600 hover:bg-white'}`}
+                >
+                  {s.replace('_', ' ')}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
-        {/* Flexible Filter Tabs (Wrapped for Mobile) */}
-        <div className="space-y-3 mb-8">
-          <div className="flex flex-wrap gap-2">
-            {(['all', 'today', 'upcoming', 'past'] as const).map((f) => (
-              <button
-                key={f}
-                onClick={() => setDateFilter(f)}
-                className={`px-5 py-2.5 text-xs font-bold rounded-xl border-2 transition-all capitalize ${dateFilter === f ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-500/20' : 'bg-white border-slate-100 text-slate-500 hover:border-slate-300'}`}
-              >
-                {f}
-              </button>
-            ))}
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            {(['all', 'paid', 'checked_in', 'picked_up', 'cancelled'] as const).map((s) => (
-              <button
-                key={s}
-                onClick={() => setStatusFilter(s)}
-                className={`px-5 py-2.5 text-xs font-bold rounded-xl border-2 transition-all capitalize ${statusFilter === s ? 'bg-slate-900 border-slate-900 text-white shadow-lg shadow-slate-900/20' : 'bg-white border-slate-100 text-slate-500 hover:border-slate-300'}`}
-              >
-                {s.replace('_', ' ')}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Main List Container */}
-        <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden mb-12">
+        {/* Data Container */}
+        <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/50 overflow-hidden min-h-[400px]">
           {loading ? (
-            <div className="p-32 text-center">
-               <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-               <p className="text-slate-400 font-bold text-xs uppercase tracking-widest">Querying Records...</p>
+            <div className="flex flex-col items-center justify-center p-32 space-y-4">
+               <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+               <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.3em]">Syncing...</p>
             </div>
           ) : filteredBookings.length === 0 ? (
-            <div className="p-32 text-center">
-              <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6 text-slate-200">
-                 <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+            <div className="flex flex-col items-center justify-center p-32 text-center">
+              <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-8 text-slate-200">
+                 <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>
               </div>
-              <p className="text-slate-500 font-bold mb-4">No results for this selection</p>
-              <button onClick={() => { setSearch(''); setDateFilter('all'); setStatusFilter('all'); }} className="text-blue-600 font-black text-xs uppercase tracking-widest hover:underline">Reset All Filters</button>
+              <p className="text-slate-900 font-black text-xl mb-2">No Records Found</p>
+              <p className="text-slate-400 text-sm font-medium mb-8">Try adjusting your filters or search terms.</p>
+              <button onClick={() => { setSearch(''); setDateFilter('all'); setStatusFilter('all'); }} className="px-8 py-3 bg-slate-900 text-white font-black text-[10px] uppercase tracking-widest rounded-2xl hover:bg-black transition-all">Clear Filters</button>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-slate-50/50 text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] border-b border-slate-100">
-                    <th className="px-6 py-5">Reference</th>
-                    <th className="px-6 py-5">Guest</th>
-                    <th className="hidden md:table-cell px-6 py-5">Drop-off</th>
-                    <th className="hidden sm:table-cell px-6 py-5 text-center">Bags</th>
-                    <th className="hidden md:table-cell px-6 py-5">Status</th>
-                    <th className="px-6 py-5 text-right">Total</th>
+                  <tr className="bg-slate-50/50 text-slate-400 text-[9px] font-black uppercase tracking-[0.2em] border-b border-slate-50">
+                    <th className="px-8 py-6">Ref & Status</th>
+                    <th className="px-8 py-6">Guest</th>
+                    <th className="hidden lg:table-cell px-8 py-6">Drop-off</th>
+                    <th className="hidden sm:table-cell px-8 py-6 text-center">Bags</th>
+                    <th className="px-8 py-6 text-right">Revenue</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
                   {filteredBookings.map((booking) => (
                     <tr 
                       key={booking.id} 
-                      className="hover:bg-slate-50/80 transition-colors cursor-pointer active:bg-slate-100"
+                      className="hover:bg-blue-50/30 transition-all cursor-pointer group active:bg-slate-100"
                       onClick={() => setSelectedBookingId(booking.id)}
                     >
-                      <td className="px-6 py-5 align-top">
-                        <span className="font-mono font-black text-slate-900 block text-sm">#{booking.bookingRef}</span>
-                        {/* Mobile Status + Time */}
-                        <div className="md:hidden mt-2 flex flex-col gap-2 items-start">
-                          <StatusBadge status={booking.status} />
-                          <p className="text-[10px] text-slate-500 font-bold">
-                            {booking.dropOff.date} • {booking.dropOff.time}
-                          </p>
+                      <td className="px-8 py-6 align-top">
+                        <span className="font-mono font-black text-slate-900 block text-base mb-2 group-hover:text-blue-600 transition-colors">#{booking.bookingRef}</span>
+                        <div className="flex items-center gap-2">
+                           <StatusBadge status={booking.status} />
+                           {/* Mobile only date indicator */}
+                           <span className="lg:hidden text-[9px] font-black text-slate-300 uppercase">{booking.dropOff.date}</span>
                         </div>
                       </td>
-                      <td className="px-6 py-5 align-top">
-                        <p className="font-black text-slate-900 text-sm truncate max-w-[120px] sm:max-w-none">{booking.customer.name}</p>
-                        <p className="text-[10px] text-slate-400 font-bold hidden sm:block mt-0.5">{booking.customer.email}</p>
+                      <td className="px-8 py-6 align-top">
+                        <p className="font-black text-slate-900 text-sm mb-1">{booking.customer.name}</p>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight hidden sm:block">{booking.customer.email}</p>
                       </td>
-                      <td className="hidden md:table-cell px-6 py-5 align-top">
+                      <td className="hidden lg:table-cell px-8 py-6 align-top">
                         <p className="text-sm font-black text-slate-900">{booking.dropOff.date}</p>
-                        <p className="text-[10px] text-slate-400 font-bold mt-0.5 uppercase">{booking.dropOff.time}</p>
+                        <p className="text-[10px] text-slate-400 font-bold mt-1 uppercase tracking-tighter">{booking.dropOff.time}</p>
                       </td>
-                      <td className="hidden sm:table-cell px-6 py-5 align-top text-center">
-                        <span className="text-xs px-2.5 py-1 bg-slate-100 rounded-lg font-black text-slate-600">
+                      <td className="hidden sm:table-cell px-8 py-6 align-top text-center">
+                        <span className="inline-flex items-center justify-center w-8 h-8 bg-slate-100 rounded-xl font-black text-xs text-slate-600 border border-slate-200">
                           {booking.bags.small + booking.bags.medium + booking.bags.large}
                         </span>
                       </td>
-                      <td className="hidden md:table-cell px-6 py-5 align-top">
-                        <StatusBadge status={booking.status} />
-                      </td>
-                      <td className="px-6 py-5 font-black text-slate-900 text-sm align-top text-right">
-                        {booking.totalPaid} <span className="text-[10px] text-slate-400 uppercase">{booking.currency}</span>
+                      <td className="px-8 py-6 align-top text-right">
+                        <p className="font-black text-slate-900 text-sm mb-1">{booking.totalPaid} {booking.currency}</p>
+                        <p className="text-[9px] text-slate-400 font-bold uppercase">{booking.billableDays} Days</p>
                       </td>
                     </tr>
                   ))}
@@ -303,16 +292,19 @@ const DashboardPage: React.FC = () => {
             </div>
           )}
         </div>
+        
+        {/* FAB Compliance Spacer */}
+        <div className="h-32"></div>
       </main>
 
-      {/* Floating Scan Button (Mobile Only) */}
-      <div className="sm:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-30">
+      {/* MOBILE FAB - SCAN QR */}
+      <div className="sm:hidden fixed bottom-8 left-1/2 -translate-x-1/2 z-30">
          <button 
            onClick={() => navigate('/scan')}
-           className="px-8 py-5 bg-blue-600 text-white rounded-full font-black text-lg shadow-2xl shadow-blue-500/40 active:scale-95 transition-all flex items-center gap-3 border-4 border-white"
+           className="px-10 py-5 bg-blue-600 text-white rounded-[2rem] font-black text-lg shadow-2xl shadow-blue-600/50 active:scale-95 transition-all flex items-center gap-4 border-4 border-white"
          >
            <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" /></svg>
-           Scan QR
+           SCAN
          </button>
       </div>
 

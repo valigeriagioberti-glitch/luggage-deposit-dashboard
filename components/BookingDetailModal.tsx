@@ -65,162 +65,145 @@ const BookingDetailModal: React.FC<BookingDetailModalProps> = ({ booking, onClos
     }
   };
 
-  const resendEmail = async () => {
-    setUpdating(true);
-    try {
-      const response = await fetch('/api/admin/resend-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ bookingRef: booking.bookingRef }),
-      });
-      if (response.ok) alert('Confirmation email resent!');
-      else alert('Failed to resend email');
-    } catch (err) {
-      alert('Network error resending email');
-    } finally {
-      setUpdating(false);
-    }
-  };
-
   const isArchived = !!booking.archivedAt;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm overflow-hidden">
-      {/* Background overlay click-to-close */}
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-md overflow-hidden">
+      {/* Background overlay */}
       <div className="absolute inset-0" onClick={onClose}></div>
       
-      <div className="relative bg-white rounded-t-[2.5rem] sm:rounded-3xl shadow-2xl w-full max-w-2xl h-[92vh] sm:h-auto sm:max-h-[90vh] flex flex-col animate-in slide-in-from-bottom sm:zoom-in duration-300">
-        {/* Header */}
-        <div className="flex-none bg-white border-b px-6 py-5 flex items-center justify-between z-10 rounded-t-[2.5rem] sm:rounded-t-3xl">
+      <div className="relative bg-white rounded-t-[2.5rem] sm:rounded-[2rem] shadow-2xl w-full max-w-2xl h-[90vh] sm:h-auto sm:max-h-[85vh] flex flex-col animate-in slide-in-from-bottom duration-300">
+        
+        {/* Header - Fixed */}
+        <div className="flex-none px-6 py-5 flex items-center justify-between border-b border-slate-50">
           <div>
-            <h2 className="text-xl font-black text-slate-900 leading-tight">Booking #{booking.bookingRef}</h2>
-            <p className="text-[10px] text-slate-400 font-mono uppercase tracking-widest">{booking.id} {isArchived && "• ARCHIVED"}</p>
+            <div className="flex items-center gap-2">
+              <h2 className="text-xl font-black text-slate-900">#{booking.bookingRef}</h2>
+              {isArchived && <span className="bg-slate-900 text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest">Archive</span>}
+            </div>
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Guest Information</p>
           </div>
-          <button onClick={onClose} className="p-2 bg-slate-100 rounded-full text-slate-500 hover:text-slate-900 transition-colors">
-            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+          <button onClick={onClose} className="p-2.5 bg-slate-100 rounded-full text-slate-400 hover:text-slate-900 transition-colors active:scale-90">
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
 
-        {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-8 pb-32 sm:pb-8">
-          {/* Quick Stats Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex flex-col justify-center">
-              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Status</p>
-              <div className="flex justify-start">
+        {/* Scrollable Content Area */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-8 pb-40 sm:pb-8 custom-scrollbar">
+          
+          {/* Profile Header */}
+          <div className="bg-slate-900 rounded-3xl p-6 text-white shadow-xl shadow-slate-200">
+             <div className="flex justify-between items-start mb-4">
                 <StatusBadge status={booking.status} />
-              </div>
+                <p className="text-[10px] font-black opacity-50 uppercase tracking-widest">Deposit Due</p>
+             </div>
+             <h3 className="text-2xl font-black mb-1">{booking.customer.name}</h3>
+             <p className="text-slate-400 text-sm font-medium mb-4">{booking.customer.email}</p>
+             <div className="flex items-center gap-2 text-blue-400 font-black text-sm">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
+                {booking.customer.phone}
+             </div>
+          </div>
+
+          {/* Logistics Grid */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="p-5 bg-blue-50/50 rounded-3xl border border-blue-100/50">
+              <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest mb-2">Drop-off</p>
+              <p className="font-black text-slate-900 text-sm">{booking.dropOff.date}</p>
+              <p className="text-[10px] text-blue-600 font-bold">{booking.dropOff.time}</p>
             </div>
-            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Total Paid</p>
-              <p className="font-black text-slate-900 text-base">{booking.totalPaid} {booking.currency.toUpperCase()}</p>
-            </div>
-            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Duration</p>
-              <p className="font-black text-slate-900 text-base">{booking.billableDays} Days</p>
-            </div>
-            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Total Bags</p>
-              <p className="font-black text-slate-900 text-base">{booking.bags.small + booking.bags.medium + booking.bags.large}</p>
+            <div className="p-5 bg-emerald-50/50 rounded-3xl border border-emerald-100/50">
+              <p className="text-[9px] font-black text-emerald-400 uppercase tracking-widest mb-2">Pick-up</p>
+              <p className="font-black text-slate-900 text-sm">{booking.pickUp.date}</p>
+              <p className="text-[10px] text-emerald-600 font-bold">{booking.pickUp.time}</p>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <section className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
-              <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-3">Customer Profile</h3>
-              <div className="space-y-1">
-                <p className="font-bold text-slate-900 text-lg">{booking.customer.name}</p>
-                <p className="text-slate-500 text-sm truncate">{booking.customer.email}</p>
-                <p className="text-blue-600 font-bold text-sm">{booking.customer.phone}</p>
-              </div>
-            </section>
-
-            <section className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
-              <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-3">Time Window</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-[9px] font-bold text-slate-400 uppercase mb-1">Drop-off</p>
-                  <p className="font-black text-slate-900 text-sm">{booking.dropOff.date}</p>
-                  <p className="text-[10px] text-slate-500 font-medium">{booking.dropOff.time}</p>
+          {/* Bag Inventory */}
+          <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100">
+             <div className="flex justify-between items-center mb-4">
+                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Luggage Inventory</h4>
+                <span className="text-xs font-black text-slate-900">{booking.bags.small + booking.bags.medium + booking.bags.large} Total</span>
+             </div>
+             <div className="grid grid-cols-3 gap-2">
+                <div className="text-center p-3 bg-white rounded-2xl border border-slate-100 shadow-sm">
+                   <p className="text-lg font-black text-slate-900">{booking.bags.small}</p>
+                   <p className="text-[8px] font-bold text-slate-400 uppercase">Small</p>
                 </div>
-                <div>
-                  <p className="text-[9px] font-bold text-slate-400 uppercase mb-1">Pick-up</p>
-                  <p className="font-black text-slate-900 text-sm">{booking.pickUp.date}</p>
-                  <p className="text-[10px] text-slate-500 font-medium">{booking.pickUp.time}</p>
+                <div className="text-center p-3 bg-white rounded-2xl border border-slate-100 shadow-sm">
+                   <p className="text-lg font-black text-slate-900">{booking.bags.medium}</p>
+                   <p className="text-[8px] font-bold text-slate-400 uppercase">Medium</p>
                 </div>
-              </div>
-            </section>
+                <div className="text-center p-3 bg-white rounded-2xl border border-slate-100 shadow-sm">
+                   <p className="text-lg font-black text-slate-900">{booking.bags.large}</p>
+                   <p className="text-[8px] font-bold text-slate-400 uppercase">Large</p>
+                </div>
+             </div>
           </div>
 
+          {/* Memo Section */}
           {!isArchived && (
-            <section>
-              <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-3">Staff Memo</h3>
-              <div className="relative">
+            <div className="space-y-3">
+              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Internal Memo</h4>
+              <div className="relative group">
                 <textarea
-                  className="w-full p-5 bg-slate-50 border border-slate-200 rounded-3xl h-32 focus:ring-4 focus:ring-blue-100 border-transparent focus:border-blue-500 outline-none transition-all text-sm resize-none shadow-inner"
-                  placeholder="Locker number, specific bag details, etc."
+                  className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-3xl h-28 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-50 outline-none transition-all text-sm font-medium placeholder:text-slate-300 resize-none"
+                  placeholder="Storage location or notes..."
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                 />
                 <button 
                   onClick={saveNotes} 
-                  disabled={updating} 
-                  className="absolute bottom-4 right-4 bg-white border border-slate-200 px-4 py-2 rounded-xl text-[10px] font-black text-blue-600 hover:bg-blue-50 disabled:opacity-50 uppercase shadow-sm"
+                  disabled={updating}
+                  className="absolute bottom-3 right-3 px-4 py-2 bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-black active:scale-95 disabled:opacity-30 transition-all shadow-lg"
                 >
-                  {updating ? 'Saving...' : 'Update Memo'}
+                  {updating ? '...' : 'Save'}
                 </button>
               </div>
-            </section>
-          )}
-
-          {isArchived && (
-             <div className="p-6 bg-slate-900 rounded-3xl text-center">
-                <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Archived Record</p>
-                <p className="text-white font-black text-lg">Checkout Complete</p>
-                <p className="text-slate-500 text-xs mt-2">
-                   This booking was picked up and archived on {booking.archivedAt?.toDate ? booking.archivedAt.toDate().toLocaleString() : 'N/A'}.
-                </p>
-             </div>
+            </div>
           )}
         </div>
 
-        {/* Sticky Action Footer (Mobile Priority) */}
+        {/* STICKY BOTTOM ACTIONS */}
         {!isArchived && (
-          <div className="flex-none absolute bottom-0 left-0 right-0 p-4 sm:p-6 bg-white border-t border-slate-100 shadow-[0_-10px_30px_rgba(0,0,0,0.05)] sm:relative sm:border-t-0 sm:shadow-none sm:bg-transparent">
-            <div className="max-w-7xl mx-auto flex flex-col sm:flex-row gap-3">
+          <div className="flex-none p-4 sm:p-8 bg-white border-t border-slate-50 shadow-[0_-20px_40px_rgba(0,0,0,0.03)] rounded-t-[2.5rem] sm:rounded-none z-20">
+            <div className="flex flex-col sm:flex-row gap-3">
+              {/* Highlight primary action based on current status */}
               <button 
                 onClick={() => updateStatus('checked_in')}
                 disabled={updating || booking.status !== 'paid'}
-                className="flex-1 h-14 sm:h-12 bg-blue-600 rounded-2xl text-white text-base font-black hover:bg-blue-700 active:scale-95 disabled:bg-slate-100 disabled:text-slate-400 disabled:active:scale-100 transition-all shadow-lg shadow-blue-100"
+                className={`flex-1 h-16 sm:h-14 rounded-2xl text-base font-black transition-all active:scale-95 
+                  ${booking.status === 'paid' 
+                    ? 'bg-blue-600 text-white shadow-xl shadow-blue-500/20' 
+                    : 'bg-slate-50 text-slate-300 border border-slate-100 opacity-50 shadow-none pointer-events-none'}`}
               >
                 Mark Checked In
               </button>
+              
               <button 
                 onClick={() => updateStatus('picked_up')}
                 disabled={updating || booking.status !== 'checked_in'}
-                className="flex-1 h-14 sm:h-12 bg-emerald-600 rounded-2xl text-white text-base font-black hover:bg-emerald-700 active:scale-95 disabled:bg-slate-100 disabled:text-slate-400 disabled:active:scale-100 transition-all shadow-lg shadow-emerald-100"
+                className={`flex-1 h-16 sm:h-14 rounded-2xl text-base font-black transition-all active:scale-95
+                  ${booking.status === 'checked_in'
+                    ? 'bg-emerald-600 text-white shadow-xl shadow-emerald-500/20'
+                    : 'bg-slate-50 text-slate-300 border border-slate-100 opacity-50 shadow-none pointer-events-none'}`}
               >
                 Mark Picked Up
               </button>
+
               <button 
                 onClick={() => updateStatus('cancelled')}
                 disabled={updating || booking.status === 'picked_up' || booking.status === 'cancelled'}
-                className="sm:w-32 h-14 sm:h-12 bg-slate-100 rounded-2xl text-slate-500 text-sm font-bold hover:bg-red-50 hover:text-red-600 active:scale-95 transition-all"
+                className="sm:w-32 h-16 sm:h-14 bg-red-50 text-red-600 rounded-2xl text-sm font-black hover:bg-red-100 active:scale-95 disabled:opacity-30 disabled:bg-slate-50 disabled:text-slate-300 transition-all"
               >
                 Cancel
               </button>
             </div>
-            
-            <div className="mt-4 sm:hidden text-center">
-               <button onClick={resendEmail} disabled={updating} className="text-[10px] font-bold text-slate-400 underline uppercase tracking-tighter">
-                  Resend Confirmation Email
-               </button>
-            </div>
           </div>
         )}
-        
+
         {/* Mobile Safe Area Spacer */}
-        <div className="h-6 sm:hidden bg-white"></div>
+        <div className="h-4 sm:hidden bg-white"></div>
       </div>
     </div>
   );
