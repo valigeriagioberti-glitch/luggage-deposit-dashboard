@@ -130,19 +130,19 @@ const DashboardPage: React.FC = () => {
       
       {/* SECTION 1: TOP FIXED PANEL (NAVBAR + FILTERS) */}
       <div className="flex-none bg-white border-b border-slate-100 shadow-sm z-30">
-        <header className="h-16 flex items-center justify-between px-4">
+        <header className="h-16 lg:h-20 flex items-center justify-between px-4 lg:px-8">
           <div className="flex items-center gap-3">
-            <img src={logoUrl} alt="Logo" className="h-8 w-auto" />
-            <h1 className="font-black text-lg text-slate-900 hidden sm:block tracking-tighter uppercase">Terminal</h1>
+            <img src={logoUrl} alt="Logo" className="h-8 lg:h-10 w-auto" />
+            <h1 className="font-black text-lg lg:text-xl text-slate-900 hidden sm:block tracking-tighter uppercase">Terminal</h1>
           </div>
           <div className="flex items-center gap-3">
             <div className="hidden md:flex items-center gap-6 mr-6 border-r pr-6 border-slate-100">
-               <Link to="/" className="text-sm font-black text-blue-600 uppercase tracking-widest">Bookings</Link>
-               <Link to="/reports" className="text-sm font-black text-slate-300 hover:text-blue-600 transition-colors uppercase tracking-widest">Reports</Link>
+               <Link to="/" className="text-sm lg:text-base font-black text-blue-600 uppercase tracking-widest px-2 lg:px-4 py-1">Bookings</Link>
+               <Link to="/reports" className="text-sm lg:text-base font-black text-slate-300 hover:text-blue-600 transition-colors uppercase tracking-widest px-2 lg:px-4 py-1">Reports</Link>
             </div>
             <button 
               onClick={handleLogout}
-              className="text-[10px] font-black text-slate-400 hover:text-red-500 uppercase tracking-widest px-3 py-2 transition-all"
+              className="text-[10px] lg:text-xs font-black text-slate-400 hover:text-red-500 uppercase tracking-widest px-3 py-2 lg:px-5 lg:py-2.5 transition-all"
             >
               Sign Out
             </button>
@@ -150,7 +150,7 @@ const DashboardPage: React.FC = () => {
         </header>
 
         {/* Search & Header Controls - Compact for App Shell */}
-        <div className="max-w-7xl mx-auto px-4 pb-4 space-y-3">
+        <div className="max-w-7xl mx-auto px-4 lg:px-8 pb-4 lg:pb-6 space-y-3 lg:space-y-5">
           {queryError && (
             <div className="p-3 bg-red-50 border border-red-100 rounded-xl text-red-600 flex gap-2 items-center">
               <p className="text-[9px] font-mono leading-relaxed truncate">{queryError}</p>
@@ -159,17 +159,17 @@ const DashboardPage: React.FC = () => {
 
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-4">
-              <h2 className="text-2xl font-black text-slate-900 tracking-tight">Orders</h2>
-              <div className="bg-slate-100 p-1 rounded-xl flex">
+              <h2 className="text-2xl lg:text-3xl font-black text-slate-900 tracking-tight">Orders</h2>
+              <div className="bg-slate-100 p-1 rounded-xl flex lg:gap-1">
                  <button 
                   onClick={() => setViewMode('active')}
-                  className={`px-3 py-1 text-[8px] font-black uppercase tracking-widest rounded-lg transition-all ${viewMode === 'active' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500'}`}
+                  className={`px-3 py-1 lg:px-5 lg:py-1.5 text-[8px] lg:text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${viewMode === 'active' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500'}`}
                 >
                   Active
                 </button>
                 <button 
                   onClick={() => setViewMode('archived')}
-                  className={`px-3 py-1 text-[8px] font-black uppercase tracking-widest rounded-lg transition-all ${viewMode === 'archived' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500'}`}
+                  className={`px-3 py-1 lg:px-5 lg:py-1.5 text-[8px] lg:text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${viewMode === 'archived' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500'}`}
                 >
                   Archive
                 </button>
@@ -180,7 +180,7 @@ const DashboardPage: React.FC = () => {
               <input
                 type="text"
                 placeholder="Find Guest..."
-                className="pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 w-full sm:w-64 transition-all font-bold text-sm text-slate-700 placeholder:text-slate-300"
+                className="pl-10 pr-4 py-2 lg:py-3.5 bg-slate-50 border border-slate-200 rounded-xl lg:rounded-2xl outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 w-full sm:w-64 lg:w-96 transition-all font-bold text-sm lg:text-base text-slate-700 placeholder:text-slate-300"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
@@ -190,25 +190,25 @@ const DashboardPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="flex gap-1 overflow-x-auto pb-1 no-scrollbar">
+          <div className="flex flex-wrap items-center gap-2 lg:gap-3">
+            <div className="flex gap-1 lg:gap-2 overflow-x-auto pb-1 no-scrollbar">
               {(['all', 'today', 'upcoming', 'past'] as const).map((f) => (
                 <button
                   key={f}
                   onClick={() => setDateFilter(f)}
-                  className={`px-3 py-1.5 text-[9px] font-black rounded-lg border transition-all capitalize whitespace-nowrap ${dateFilter === f ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white border-slate-100 text-slate-400'}`}
+                  className={`px-3 py-1.5 lg:px-5 lg:py-2.5 text-[9px] lg:text-xs font-black rounded-lg lg:rounded-xl border transition-all capitalize whitespace-nowrap ${dateFilter === f ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white border-slate-100 text-slate-400'}`}
                 >
                   {f}
                 </button>
               ))}
             </div>
             <div className="h-4 w-[1px] bg-slate-200 hidden sm:block mx-1"></div>
-            <div className="flex gap-1 overflow-x-auto pb-1 no-scrollbar">
+            <div className="flex gap-1 lg:gap-2 overflow-x-auto pb-1 no-scrollbar">
               {(['all', 'paid', 'checked_in', 'picked_up', 'cancelled'] as const).map((s) => (
                 <button
                   key={s}
                   onClick={() => setStatusFilter(s)}
-                  className={`px-3 py-1.5 text-[8px] font-black rounded-lg border transition-all uppercase tracking-tighter whitespace-nowrap ${statusFilter === s ? 'bg-slate-900 border-slate-900 text-white' : 'bg-slate-50 border-slate-100 text-slate-400'}`}
+                  className={`px-3 py-1.5 lg:px-5 lg:py-2.5 text-[8px] lg:text-[10px] font-black rounded-lg lg:rounded-xl border transition-all uppercase tracking-tighter whitespace-nowrap ${statusFilter === s ? 'bg-slate-900 border-slate-900 text-white' : 'bg-slate-50 border-slate-100 text-slate-400'}`}
                 >
                   {s.replace('_', ' ')}
                 </button>
@@ -219,27 +219,27 @@ const DashboardPage: React.FC = () => {
       </div>
 
       {/* SECTION 2: SCROLLABLE LIST AREA */}
-      <main className="app-scroller flex-1 overflow-y-auto bg-slate-50 px-4 py-4 overscroll-contain">
+      <main className="app-scroller flex-1 overflow-y-auto bg-slate-50 px-4 py-4 lg:px-8 overscroll-contain">
         <div className="max-w-7xl mx-auto">
           <div className="bg-white rounded-[1.5rem] border border-slate-100 shadow-sm overflow-hidden mb-6">
             {loading ? (
-              <div className="flex flex-col items-center justify-center py-20 space-y-4">
-                 <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                 <p className="text-[9px] text-slate-400 font-black uppercase tracking-[0.2em]">Syncing...</p>
+              <div className="flex flex-col items-center justify-center py-20 lg:py-32 space-y-4">
+                 <div className="w-8 h-8 lg:w-10 lg:h-10 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                 <p className="text-[9px] lg:text-xs text-slate-400 font-black uppercase tracking-[0.2em]">Syncing...</p>
               </div>
             ) : filteredBookings.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-20 text-center px-6">
-                <p className="text-slate-900 font-black text-lg mb-1">No Orders Found</p>
-                <p className="text-slate-400 text-xs mb-4">Try adjusting your filters.</p>
-                <button onClick={() => { setSearch(''); setDateFilter('all'); setStatusFilter('all'); }} className="text-blue-600 font-black text-[10px] uppercase tracking-widest hover:underline">Reset All</button>
+              <div className="flex flex-col items-center justify-center py-20 lg:py-32 text-center px-6">
+                <p className="text-slate-900 font-black text-lg lg:text-xl mb-1">No Orders Found</p>
+                <p className="text-slate-400 text-xs lg:text-sm mb-4">Try adjusting your filters.</p>
+                <button onClick={() => { setSearch(''); setDateFilter('all'); setStatusFilter('all'); }} className="text-blue-600 font-black text-[10px] lg:text-xs uppercase tracking-widest hover:underline">Reset All</button>
               </div>
             ) : (
               <div className="overflow-hidden">
                 <table className="w-full text-left border-collapse table-fixed">
                   <thead>
-                    <tr className="bg-slate-50/50 text-slate-400 text-[8px] font-black uppercase tracking-[0.2em] border-b border-slate-50">
-                      <th className="px-4 py-3 w-[45%] sm:w-auto">Reference</th>
-                      <th className="px-4 py-3 w-[55%] sm:w-auto">Guest</th>
+                    <tr className="bg-slate-50/50 text-slate-400 text-[8px] lg:text-[10px] font-black uppercase tracking-[0.2em] border-b border-slate-50">
+                      <th className="px-4 py-3 lg:px-6 lg:py-5 w-[45%] sm:w-auto">Reference</th>
+                      <th className="px-4 py-3 lg:px-6 lg:py-5 w-[55%] sm:w-auto">Guest</th>
                       <th className="hidden lg:table-cell px-6 py-4">Drop-off</th>
                       <th className="hidden sm:table-cell px-6 py-4 text-center">Bags</th>
                       <th className="hidden sm:table-cell px-6 py-4 text-right">Total</th>
@@ -252,26 +252,26 @@ const DashboardPage: React.FC = () => {
                         className="hover:bg-blue-50/30 transition-all cursor-pointer group active:bg-slate-100"
                         onClick={() => setSelectedBookingId(booking.id)}
                       >
-                        <td className="px-4 py-4 align-middle">
-                          <span className="font-mono font-black text-slate-900 block text-xs mb-1">#{booking.bookingRef}</span>
+                        <td className="px-4 py-4 lg:px-6 lg:py-6 align-middle">
+                          <span className="font-mono font-black text-slate-900 block text-xs lg:text-sm mb-1">#{booking.bookingRef}</span>
                           <StatusBadge status={booking.status} />
                         </td>
-                        <td className="px-4 py-4 align-middle">
-                          <p className="font-black text-slate-900 text-xs mb-0.5 truncate">{booking.customer.name}</p>
-                          <p className="text-[9px] text-slate-400 font-bold uppercase tracking-tight truncate">{booking.dropOff.date} • {booking.dropOff.time}</p>
+                        <td className="px-4 py-4 lg:px-6 lg:py-6 align-middle">
+                          <p className="font-black text-slate-900 text-xs lg:text-sm mb-0.5 truncate">{booking.customer.name}</p>
+                          <p className="text-[9px] lg:text-xs text-slate-400 font-bold uppercase tracking-tight truncate">{booking.dropOff.date} • {booking.dropOff.time}</p>
                         </td>
-                        <td className="hidden lg:table-cell px-6 py-4 align-middle">
-                          <p className="text-xs font-black text-slate-900">{booking.dropOff.date}</p>
-                          <p className="text-[9px] text-slate-400 font-bold mt-0.5 uppercase tracking-tighter">{booking.dropOff.time}</p>
+                        <td className="hidden lg:table-cell px-6 py-4 lg:py-6 align-middle">
+                          <p className="text-xs lg:text-sm font-black text-slate-900">{booking.dropOff.date}</p>
+                          <p className="text-[9px] lg:text-xs text-slate-400 font-bold mt-0.5 uppercase tracking-tighter">{booking.dropOff.time}</p>
                         </td>
-                        <td className="hidden sm:table-cell px-6 py-4 align-middle text-center">
-                          <span className="inline-flex items-center justify-center w-7 h-7 bg-slate-50 rounded-lg font-black text-[10px] text-slate-600 border border-slate-100">
+                        <td className="hidden sm:table-cell px-6 py-4 lg:py-6 align-middle text-center">
+                          <span className="inline-flex items-center justify-center w-7 h-7 lg:w-9 lg:h-9 bg-slate-50 rounded-lg font-black text-[10px] lg:text-xs text-slate-600 border border-slate-100">
                             {booking.bags.small + booking.bags.medium + booking.bags.large}
                           </span>
                         </td>
-                        <td className="hidden sm:table-cell px-6 py-4 align-middle text-right">
-                          <p className="font-black text-slate-900 text-xs">{booking.totalPaid} {booking.currency}</p>
-                          <p className="text-[8px] text-slate-400 font-bold uppercase">{booking.billableDays}d</p>
+                        <td className="hidden sm:table-cell px-6 py-4 lg:py-6 align-middle text-right">
+                          <p className="font-black text-slate-900 text-xs lg:text-sm">{booking.totalPaid} {booking.currency}</p>
+                          <p className="text-[8px] lg:text-[10px] text-slate-400 font-bold uppercase">{booking.billableDays}d</p>
                         </td>
                       </tr>
                     ))}
