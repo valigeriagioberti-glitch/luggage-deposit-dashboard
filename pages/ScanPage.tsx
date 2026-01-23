@@ -82,24 +82,24 @@ const ScanPage: React.FC = () => {
       const data = await response.json();
       if (response.ok) {
         setBooking(data.booking);
-        stopCamera();
+        await stopCamera();
       } else {
         // Handle lookup failure
         triggerErrorVibrate();
         setError(data.error || 'Booking not found in our system.');
         setBooking(null);
-        stopCamera();
+        await stopCamera();
       }
     } catch (err) {
       triggerErrorVibrate();
       setError('Connection error. Please check your internet.');
-      stopCamera();
+      await stopCamera();
     } finally {
       setLoading(false);
     }
   };
 
-  const validateAndProcessInput = (rawInput: string) => {
+  const validateAndProcessInput = async (rawInput: string) => {
     setError(null);
     setScanFeedback(`Scanned: ${rawInput.length > 20 ? rawInput.substring(0, 17) + '...' : rawInput}`);
     
@@ -112,7 +112,7 @@ const ScanPage: React.FC = () => {
       // Handle invalid QR extraction
       triggerErrorVibrate();
       setError("This is not a valid Luggage Deposit Rome QR code.");
-      stopCamera();
+      await stopCamera();
       return;
     }
 
@@ -141,9 +141,16 @@ const ScanPage: React.FC = () => {
   const startCamera = async () => {
     setError(null);
     setCameraPermissionError(false);
-    const html5QrCode = new Html5Qrcode("qr-reader");
-    html5QrCodeRef.current = html5QrCode;
+    
+    // Cleanup any existing instance first
+    if (html5QrCodeRef.current) {
+      await stopCamera();
+    }
+
     try {
+      const html5QrCode = new Html5Qrcode("qr-reader");
+      html5QrCodeRef.current = html5QrCode;
+      
       await html5QrCode.start(
         { facingMode: "environment" },
         { 
@@ -165,8 +172,16 @@ const ScanPage: React.FC = () => {
   };
 
   const stopCamera = async () => {
-    if (html5QrCodeRef.current && html5QrCodeRef.current.isScanning) {
-      await html5QrCodeRef.current.stop();
+    if (html5QrCodeRef.current) {
+      try {
+        if (html5QrCodeRef.current.isScanning) {
+          await html5QrCodeRef.current.stop();
+        }
+        await html5QrCodeRef.current.clear();
+      } catch (err) {
+        console.error("Cleanup error", err);
+      }
+      html5QrCodeRef.current = null;
       setIsCameraActive(false);
     }
   };
@@ -205,13 +220,19 @@ const ScanPage: React.FC = () => {
     }
   };
 
-  const resetScanner = () => {
+  const resetScanner = async () => {
+    await stopCamera();
     setBooking(null);
     setBookingRef(null);
     setSuccessMessage(null);
     setError(null);
     setManualInput('');
-    startCamera();
+    
+    // Crucial: Use a short timeout to allow React to re-render the camera container
+    // after clearing the 'error' or 'booking' states that might have hidden it.
+    setTimeout(() => {
+      startCamera();
+    }, 100);
   };
 
   const handleManualLookup = (e: React.FormEvent) => {
@@ -254,7 +275,7 @@ const ScanPage: React.FC = () => {
 
         {/* SUCCESS VIEW */}
         {successMessage ? (
-          <div className="w-full max-w-sm px-8 text-center animate-in zoom-in duration-300">
+          <div className="w-full max-sm px-8 text-center animate-in zoom-in duration-300">
             <div className="w-24 h-24 bg-emerald-500/20 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-8 border border-emerald-500/30">
               <svg className="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
             </div>

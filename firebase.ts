@@ -1,7 +1,7 @@
 
 // Initialize Firebase using the modular SDK
-// Fix: Use a namespaced import for 'firebase/app' to resolve potential issues with named export resolution in some TypeScript environments
-import * as firebaseApp from 'firebase/app';
+// Fix: Use direct named export for initializeApp to resolve TypeScript resolution errors
+import { initializeApp } from 'firebase/app';
 // Get Auth instance using the modular SDK
 import { getAuth } from 'firebase/auth';
 // Get Firestore instance using the modular SDK
@@ -17,8 +17,8 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-// Fix: Call initializeApp via the namespace to ensure it is correctly resolved
-const app = firebaseApp.initializeApp(firebaseConfig);
+// Fix: Initializing the app using the direct named export
+const app = initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);
 export const db = getFirestore(app);
