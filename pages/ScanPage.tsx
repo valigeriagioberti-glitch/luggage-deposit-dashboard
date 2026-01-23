@@ -62,6 +62,13 @@ const ScanPage: React.FC = () => {
     }
   };
 
+  const triggerErrorVibrate = () => {
+    if ('vibrate' in navigator) {
+      // Distinct pattern for errors: three short bursts
+      navigator.vibrate([100, 50, 100, 50, 100]);
+    }
+  };
+
   const lookupBooking = async (ref: string) => {
     setLoading(true);
     setError(null);
@@ -77,11 +84,16 @@ const ScanPage: React.FC = () => {
         setBooking(data.booking);
         stopCamera();
       } else {
-        setError(data.error || 'Booking not found.');
+        // Handle lookup failure
+        triggerErrorVibrate();
+        setError(data.error || 'Booking not found in our system.');
         setBooking(null);
+        stopCamera();
       }
     } catch (err) {
-      setError('Connection error.');
+      triggerErrorVibrate();
+      setError('Connection error. Please check your internet.');
+      stopCamera();
     } finally {
       setLoading(false);
     }
@@ -97,7 +109,10 @@ const ScanPage: React.FC = () => {
     const extracted = extractBookingRef(rawInput);
     
     if (!extracted) {
-      setError("Not a booking QR. Please scan the customer booking QR.");
+      // Handle invalid QR extraction
+      triggerErrorVibrate();
+      setError("This is not a valid Luggage Deposit Rome QR code.");
+      stopCamera();
       return;
     }
 
@@ -179,9 +194,11 @@ const ScanPage: React.FC = () => {
         setTimeout(() => navigate('/'), 2000);
       } else {
         const data = await response.json();
+        triggerErrorVibrate();
         setError(data.error || 'Action failed.');
       }
     } catch (err) {
+      triggerErrorVibrate();
       setError('Connection error.');
     } finally {
       setLoading(false);
@@ -192,8 +209,16 @@ const ScanPage: React.FC = () => {
     setBooking(null);
     setBookingRef(null);
     setSuccessMessage(null);
+    setError(null);
     setManualInput('');
     startCamera();
+  };
+
+  const handleManualLookup = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (manualInput) {
+      validateAndProcessInput(manualInput);
+    }
   };
 
   return (
@@ -209,7 +234,7 @@ const ScanPage: React.FC = () => {
             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Scanner</p>
           </div>
         </div>
-        {!booking && !successMessage && (
+        {!booking && !successMessage && !error && (
            <button 
             onClick={resetScanner} 
             className="text-xs font-bold text-blue-400 hover:text-blue-300"
@@ -227,6 +252,7 @@ const ScanPage: React.FC = () => {
           </div>
         )}
 
+        {/* SUCCESS VIEW */}
         {successMessage ? (
           <div className="w-full max-w-sm px-8 text-center animate-in zoom-in duration-300">
             <div className="w-24 h-24 bg-emerald-500/20 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-8 border border-emerald-500/30">
@@ -249,10 +275,37 @@ const ScanPage: React.FC = () => {
                 Back to List
               </button>
             </div>
-
-            <p className="text-slate-500 text-[9px] mt-8 animate-pulse font-black uppercase tracking-widest">Auto-returning shortly...</p>
+          </div>
+        ) : error && !isCameraActive ? (
+          /* FATAL ERROR VIEW (Mobile Card) */
+          <div className="w-full max-w-sm px-6 animate-in zoom-in duration-300">
+            <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border-2 border-red-100">
+               <div className="p-10 text-center">
+                  <div className="w-20 h-20 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6 border border-red-100">
+                    <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" /></svg>
+                  </div>
+                  <h2 className="text-2xl font-black text-slate-900 mb-2">Invalid Scan</h2>
+                  <p className="text-slate-500 font-medium text-sm leading-relaxed mb-8">{error}</p>
+                  
+                  <div className="space-y-3">
+                    <button 
+                      onClick={resetScanner}
+                      className="w-full py-4 bg-red-600 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-lg shadow-red-200 active:scale-[0.98] transition-all"
+                    >
+                      Try Again
+                    </button>
+                    <button 
+                      onClick={() => { setError(null); }}
+                      className="w-full py-4 bg-slate-100 text-slate-600 rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-slate-200 transition-all"
+                    >
+                      Manual Entry
+                    </button>
+                  </div>
+               </div>
+            </div>
           </div>
         ) : booking ? (
+          /* BOOKING DETAIL VIEW */
           <div className="w-full max-w-lg px-6 animate-in slide-in-from-bottom duration-300">
             <div className="bg-white rounded-[2rem] shadow-2xl overflow-hidden border border-slate-200">
                <div className="p-8 space-y-8">
@@ -280,21 +333,6 @@ const ScanPage: React.FC = () => {
                           <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Total Bags</p>
                           <p className="font-black text-slate-900 text-xl">{booking.bags.small + booking.bags.medium + booking.bags.large}</p>
                         </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-3 gap-2 mt-4">
-                         <div className="bg-white border border-slate-200 rounded-xl p-2 text-center shadow-sm">
-                            <p className="text-lg font-black text-slate-900 leading-none">{booking.bags.small || 0}</p>
-                            <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-1">Small</p>
-                         </div>
-                         <div className="bg-white border border-slate-200 rounded-xl p-2 text-center shadow-sm">
-                            <p className="text-lg font-black text-slate-900 leading-none">{booking.bags.medium || 0}</p>
-                            <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-1">Medium</p>
-                         </div>
-                         <div className="bg-white border border-slate-200 rounded-xl p-2 text-center shadow-sm">
-                            <p className="text-lg font-black text-slate-900 leading-none">{booking.bags.large || 0}</p>
-                            <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-1">Large</p>
-                         </div>
                       </div>
                     </div>
                   </div>
@@ -336,6 +374,7 @@ const ScanPage: React.FC = () => {
             </button>
           </div>
         ) : (
+          /* SCANNER & MANUAL FORM VIEW */
           <div className="w-full h-full flex flex-col">
             <div className="flex-1 relative flex items-center justify-center bg-black">
                <div id="qr-reader" className="w-full h-full"></div>
@@ -358,7 +397,7 @@ const ScanPage: React.FC = () => {
 
             <div className="flex-none bg-slate-900 p-8 pt-4 pb-12 rounded-t-[3rem] shadow-[0_-20px_50px_rgba(0,0,0,0.5)] border-t border-slate-800">
                <div className="w-12 h-1 bg-slate-700 rounded-full mx-auto mb-6"></div>
-               <form onSubmit={(e) => { e.preventDefault(); validateAndProcessInput(manualInput); }} className="space-y-4">
+               <form onSubmit={handleManualLookup} className="space-y-4">
                   <input 
                     type="text" 
                     value={manualInput}
@@ -370,7 +409,8 @@ const ScanPage: React.FC = () => {
                     Search Booking
                   </button>
                </form>
-               {error && (
+               {/* Inline error for form input if scanner is active */}
+               {error && isCameraActive && (
                  <div className="mt-4 p-4 bg-red-500/10 text-red-500 rounded-2xl text-[10px] font-black uppercase tracking-widest text-center">
                     {error}
                  </div>
