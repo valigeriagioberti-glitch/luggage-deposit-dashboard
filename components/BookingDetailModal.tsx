@@ -13,6 +13,7 @@ interface BookingDetailModalProps {
 
 const BookingDetailModal: React.FC<BookingDetailModalProps> = ({ booking, onClose, onUpdate }) => {
   const [notes, setNotes] = useState(booking.notes || '');
+  const [address, setAddress] = useState(booking.address || '');
   const [updating, setUpdating] = useState(false);
 
   const updateStatus = async (newStatus: BookingStatus) => {
@@ -52,14 +53,17 @@ const BookingDetailModal: React.FC<BookingDetailModalProps> = ({ booking, onClos
     }
   };
 
-  const saveNotes = async () => {
+  const saveData = async () => {
     setUpdating(true);
     try {
       const bookingRef = doc(db, 'bookings', booking.id);
-      await updateDoc(bookingRef, { 'dropOff.notes': notes });
+      await updateDoc(bookingRef, { 
+        'dropOff.notes': notes,
+        'address': address 
+      });
       onUpdate();
     } catch (err) {
-      alert('Failed to save notes. Note: Archived bookings are read-only.');
+      alert('Failed to save data. Note: Archived bookings are read-only.');
     } finally {
       setUpdating(false);
     }
@@ -93,7 +97,7 @@ const BookingDetailModal: React.FC<BookingDetailModalProps> = ({ booking, onClos
           </button>
         </div>
 
-        {/* Scrollable Content Area - Use flex-1 min-h-0 to force internal scroll */}
+        {/* Scrollable Content Area */}
         <div className="flex-1 min-h-0 overflow-y-auto p-6 space-y-6 pb-[240px] sm:pb-8 custom-scrollbar">
           
           {/* Profile Header */}
@@ -103,6 +107,15 @@ const BookingDetailModal: React.FC<BookingDetailModalProps> = ({ booking, onClos
                 <p className="text-[10px] font-black opacity-50 uppercase tracking-widest">Deposit Active</p>
              </div>
              <h3 className="text-xl font-black mb-1 truncate">{booking.customer.name}</h3>
+             
+             {/* ADDRESS DISPLAY */}
+             {booking.address && (
+               <div className="flex items-center gap-2 text-slate-400 font-bold text-[11px] mb-3 uppercase tracking-wider">
+                  <span className="text-blue-400">📍</span>
+                  {booking.address}
+               </div>
+             )}
+
              <p className="text-slate-400 text-xs font-medium mb-4 truncate">{booking.customer.email}</p>
              <div className="flex items-center gap-2 text-blue-400 font-black text-sm">
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
@@ -110,7 +123,7 @@ const BookingDetailModal: React.FC<BookingDetailModalProps> = ({ booking, onClos
              </div>
           </div>
 
-          {/* Logistics Grid - Ensure visibility */}
+          {/* Logistics Grid */}
           <div className="grid grid-cols-2 gap-3">
             <div className="p-4 bg-blue-50/50 rounded-2xl border border-blue-100/50">
               <p className="text-[8px] font-black text-blue-400 uppercase tracking-widest mb-1">Drop-off</p>
@@ -146,30 +159,43 @@ const BookingDetailModal: React.FC<BookingDetailModalProps> = ({ booking, onClos
              </div>
           </div>
 
-          {/* Memo Section */}
+          {/* EDITABLE FIELDS */}
           {!isArchived && (
-            <div className="space-y-2">
-              <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Staff Memo</h4>
-              <div className="relative">
-                <textarea
-                  className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl h-20 focus:border-blue-500 focus:bg-white outline-none transition-all text-sm font-medium placeholder:text-slate-300 resize-none"
-                  placeholder="Details..."
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Address</h4>
+                <input
+                  type="text"
+                  className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-blue-500 focus:bg-white outline-none transition-all text-sm font-medium placeholder:text-slate-300"
+                  placeholder="Street/Location..."
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
                 />
-                <button 
-                  onClick={saveNotes} 
-                  disabled={updating}
-                  className="absolute bottom-2 right-2 px-3 py-1.5 bg-slate-900 text-white text-[9px] font-black uppercase tracking-widest rounded-lg disabled:opacity-30"
-                >
-                  {updating ? '...' : 'Save'}
-                </button>
+              </div>
+
+              <div className="space-y-2">
+                <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Staff Memo</h4>
+                <div className="relative">
+                  <textarea
+                    className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl h-20 focus:border-blue-500 focus:bg-white outline-none transition-all text-sm font-medium placeholder:text-slate-300 resize-none"
+                    placeholder="Details..."
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                  />
+                  <button 
+                    onClick={saveData} 
+                    disabled={updating}
+                    className="absolute bottom-2 right-2 px-3 py-1.5 bg-slate-900 text-white text-[9px] font-black uppercase tracking-widest rounded-lg disabled:opacity-30"
+                  >
+                    {updating ? '...' : 'Save'}
+                  </button>
+                </div>
               </div>
             </div>
           )}
         </div>
 
-        {/* STICKY BOTTOM ACTIONS - standardized sizing */}
+        {/* STICKY BOTTOM ACTIONS */}
         {!isArchived && (
           <div className="flex-none p-4 pb-8 sm:p-6 bg-white border-t border-slate-100 shadow-[0_-10px_30px_rgba(0,0,0,0.05)] rounded-t-[2.5rem] sm:rounded-none z-20">
             <div className="flex flex-col gap-3 sm:flex-row sm:gap-3 max-w-lg mx-auto">

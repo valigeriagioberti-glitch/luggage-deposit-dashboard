@@ -35,6 +35,7 @@ export interface Booking {
   currency: string;
   status: BookingStatus;
   notes: string;
+  address?: string; // Restore optional field
   walletIssued: boolean;
 }
 

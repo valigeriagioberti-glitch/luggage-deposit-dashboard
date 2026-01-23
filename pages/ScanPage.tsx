@@ -56,47 +56,10 @@ const ScanPage: React.FC = () => {
     };
   }, []);
 
-  const extractBookingRef = (input: string): string | null => {
-    let cleanInput = input.trim();
-    
-    // Case 1: URL containing ref=
-    if (cleanInput.toLowerCase().includes('ref=')) {
-      try {
-        const normalized = cleanInput.replace('/#/', '/');
-        const url = new URL(normalized);
-        const param = url.searchParams.get('ref');
-        if (param) return param.toUpperCase();
-      } catch (e) {
-        const parts = cleanInput.split(/[?&]ref=/i);
-        if (parts.length > 1) return parts[1].split('&')[0].toUpperCase();
-      }
+  const triggerVibrate = () => {
+    if ('vibrate' in navigator) {
+      navigator.vibrate([200, 100, 200]);
     }
-
-    // Case 2: Raw alphanumeric string (6-12 chars)
-    const refRegex = /^[A-Z0-9]{6,12}$/i;
-    if (refRegex.test(cleanInput)) {
-      return cleanInput.toUpperCase();
-    }
-
-    return null;
-  };
-
-  const validateAndProcessInput = (rawInput: string) => {
-    setError(null);
-    setScanFeedback(`Scanned: ${rawInput.length > 20 ? rawInput.substring(0, 17) + '...' : rawInput}`);
-    
-    // Clear feedback toast after 2 seconds
-    setTimeout(() => setScanFeedback(null), 2000);
-
-    const extracted = extractBookingRef(rawInput);
-    
-    if (!extracted) {
-      setError("Not a booking QR. Please scan the customer booking QR.");
-      return;
-    }
-
-    setBookingRef(extracted);
-    lookupBooking(extracted);
   };
 
   const lookupBooking = async (ref: string) => {
@@ -122,6 +85,42 @@ const ScanPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const validateAndProcessInput = (rawInput: string) => {
+    setError(null);
+    setScanFeedback(`Scanned: ${rawInput.length > 20 ? rawInput.substring(0, 17) + '...' : rawInput}`);
+    
+    // Clear feedback toast after 2 seconds
+    setTimeout(() => setScanFeedback(null), 2000);
+
+    const extracted = extractBookingRef(rawInput);
+    
+    if (!extracted) {
+      setError("Not a booking QR. Please scan the customer booking QR.");
+      return;
+    }
+
+    setBookingRef(extracted);
+    lookupBooking(extracted);
+  };
+
+  const extractBookingRef = (input: string): string | null => {
+    let cleanInput = input.trim();
+    if (cleanInput.toLowerCase().includes('ref=')) {
+      try {
+        const normalized = cleanInput.replace('/#/', '/');
+        const url = new URL(normalized);
+        const param = url.searchParams.get('ref');
+        if (param) return param.toUpperCase();
+      } catch (e) {
+        const parts = cleanInput.split(/[?&]ref=/i);
+        if (parts.length > 1) return parts[1].split('&')[0].toUpperCase();
+      }
+    }
+    const refRegex = /^[A-Z0-9]{6,12}$/i;
+    if (refRegex.test(cleanInput)) return cleanInput.toUpperCase();
+    return null;
   };
 
   const startCamera = async () => {
@@ -157,18 +156,13 @@ const ScanPage: React.FC = () => {
     }
   };
 
-  const triggerVibrate = () => {
-    if ('vibrate' in navigator) {
-      navigator.vibrate([200, 100, 200]);
-    }
-  };
-
   const handleAction = async (action: 'checkin' | 'pickup') => {
     if (!bookingRef || !booking) return;
     setLoading(true);
     setError(null);
     try {
-      const endpoint = action === 'checkin' ? '/api/booking/checkin' : '/api/booking/pickup';
+      // Use the ARCHIVE endpoint for pickup to match business rules
+      const endpoint = action === 'checkin' ? '/api/booking/checkin' : '/api/archive/pickup';
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -176,7 +170,12 @@ const ScanPage: React.FC = () => {
       });
       if (response.ok) {
         triggerVibrate();
-        setSuccessMessage(action === 'checkin' ? 'Checked in successfully ✅' : 'Picked up successfully ✅');
+        setSuccessMessage(action === 'checkin' ? 'Checked in successfully ✅' : 'Picked up successfully ✅ Archived');
+        
+        // Update local status so UI reflects success immediately if not yet auto-navigated
+        setBooking(prev => prev ? { ...prev, status: action === 'checkin' ? 'checked_in' : 'picked_up' } : null);
+
+        // Auto-navigate after 2 seconds
         setTimeout(() => navigate('/'), 2000);
       } else {
         const data = await response.json();
@@ -189,6 +188,14 @@ const ScanPage: React.FC = () => {
     }
   };
 
+  const resetScanner = () => {
+    setBooking(null);
+    setBookingRef(null);
+    setSuccessMessage(null);
+    setManualInput('');
+    startCamera();
+  };
+
   return (
     <div className="fixed inset-0 bg-black flex flex-col overflow-hidden">
       {/* App Header */}
@@ -198,13 +205,13 @@ const ScanPage: React.FC = () => {
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" /></svg>
           </button>
           <div>
-            <h1 className="text-lg font-black tracking-tight leading-none">Scanner</h1>
-            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Staff Terminal</p>
+            <h1 className="text-lg font-black tracking-tight leading-none uppercase">Terminal</h1>
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Scanner</p>
           </div>
         </div>
         {!booking && !successMessage && (
            <button 
-            onClick={() => { setManualInput(''); setBooking(null); setBookingRef(null); startCamera(); }} 
+            onClick={resetScanner} 
             className="text-xs font-bold text-blue-400 hover:text-blue-300"
           >
              Reset
@@ -226,8 +233,24 @@ const ScanPage: React.FC = () => {
               <svg className="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
             </div>
             <h2 className="text-3xl font-black text-white mb-4">Success!</h2>
-            <p className="text-emerald-400 font-bold text-lg">{successMessage}</p>
-            <p className="text-slate-500 text-sm mt-8 animate-pulse">Returning to dashboard...</p>
+            <p className="text-emerald-400 font-bold text-lg leading-tight mb-8">{successMessage}</p>
+            
+            <div className="space-y-3">
+              <button 
+                onClick={resetScanner}
+                className="w-full py-4 bg-white/10 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] border border-white/10 hover:bg-white/20 transition-all"
+              >
+                Scan Next
+              </button>
+              <button 
+                onClick={() => navigate('/')}
+                className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-lg shadow-blue-500/20"
+              >
+                Back to List
+              </button>
+            </div>
+
+            <p className="text-slate-500 text-[9px] mt-8 animate-pulse font-black uppercase tracking-widest">Auto-returning shortly...</p>
           </div>
         ) : booking ? (
           <div className="w-full max-w-lg px-6 animate-in slide-in-from-bottom duration-300">
@@ -259,7 +282,6 @@ const ScanPage: React.FC = () => {
                         </div>
                       </div>
                       
-                      {/* Luggage Inventory Breakdown */}
                       <div className="grid grid-cols-3 gap-2 mt-4">
                          <div className="bg-white border border-slate-200 rounded-xl p-2 text-center shadow-sm">
                             <p className="text-lg font-black text-slate-900 leading-none">{booking.bags.small || 0}</p>
@@ -307,7 +329,7 @@ const ScanPage: React.FC = () => {
                </div>
             </div>
             <button 
-              onClick={() => { setBooking(null); setBookingRef(null); startCamera(); }}
+              onClick={resetScanner}
               className="w-full mt-6 text-white/50 font-bold text-sm uppercase tracking-[0.2em] hover:text-white transition-colors"
             >
               Scan Another
@@ -315,67 +337,41 @@ const ScanPage: React.FC = () => {
           </div>
         ) : (
           <div className="w-full h-full flex flex-col">
-            {/* Scanner Viewport */}
             <div className="flex-1 relative flex items-center justify-center bg-black">
                <div id="qr-reader" className="w-full h-full"></div>
-               
-               {/* Scanner Overlay Frame */}
                {isCameraActive && (
                  <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
                     <div className="w-[280px] h-[280px] border-2 border-white/30 rounded-[3rem] shadow-[0_0_0_1000px_rgba(0,0,0,0.6)] relative overflow-hidden">
                        <div className="absolute inset-0 border-[3px] border-blue-500/80 rounded-[3rem] animate-pulse"></div>
-                       {/* Scanning line animation */}
                        <div className="absolute top-0 left-0 right-0 h-1 bg-blue-500 shadow-[0_0_15px_rgba(59,130,246,1)] animate-[scan_3s_ease-in-out_infinite]"></div>
                     </div>
-                    <style>{`
-                      @keyframes scan {
-                        0%, 100% { top: 10%; }
-                        50% { top: 90%; }
-                      }
-                    `}</style>
                  </div>
                )}
-
                {cameraPermissionError && (
                  <div className="absolute inset-0 bg-slate-900 flex flex-col items-center justify-center p-8 text-center z-20">
-                    <div className="w-20 h-20 bg-red-500/20 text-red-500 rounded-full flex items-center justify-center mb-6 border border-red-500/30">
-                       <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-                    </div>
                     <h3 className="text-white text-xl font-black mb-2">Camera Blocked</h3>
                     <p className="text-slate-400 text-sm mb-8">Access is required to scan QR codes. Please update your browser permissions.</p>
-                    <button 
-                      onClick={startCamera} 
-                      className="px-8 py-4 bg-white text-slate-900 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl active:scale-95 transition-all"
-                    >
-                      Allow Camera
-                    </button>
+                    <button onClick={startCamera} className="px-8 py-4 bg-white text-slate-900 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl">Allow Camera</button>
                  </div>
                )}
             </div>
 
-            {/* Manual Entry Drawer */}
             <div className="flex-none bg-slate-900 p-8 pt-4 pb-12 rounded-t-[3rem] shadow-[0_-20px_50px_rgba(0,0,0,0.5)] border-t border-slate-800">
                <div className="w-12 h-1 bg-slate-700 rounded-full mx-auto mb-6"></div>
-               <div className="relative mb-6">
-                 <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-800"></div></div>
-                 <div className="relative flex justify-center text-[10px]"><span className="px-3 bg-slate-900 text-slate-500 font-black uppercase tracking-[0.3em]">Manual Lookup</span></div>
-               </div>
-
                <form onSubmit={(e) => { e.preventDefault(); validateAndProcessInput(manualInput); }} className="space-y-4">
                   <input 
                     type="text" 
                     value={manualInput}
                     onChange={(e) => setManualInput(e.target.value)}
                     placeholder="ENTER REFERENCE"
-                    className="w-full h-16 bg-slate-800 border-2 border-slate-700 rounded-2xl text-white text-center text-xl font-black tracking-[0.2em] outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all placeholder:text-slate-600"
+                    className="w-full h-16 bg-slate-800 border-2 border-slate-700 rounded-2xl text-white text-center text-xl font-black tracking-[0.2em] outline-none focus:border-blue-500 transition-all placeholder:text-slate-600 uppercase"
                   />
-                  <button type="submit" className="w-full h-12 bg-slate-100 text-slate-900 rounded-xl text-sm font-black uppercase tracking-widest hover:bg-white active:scale-98 transition-all">
+                  <button type="submit" className="w-full h-12 bg-slate-100 text-slate-900 rounded-xl text-sm font-black uppercase tracking-widest">
                     Search Booking
                   </button>
                </form>
-
                {error && (
-                 <div className="mt-4 p-4 bg-red-500/10 text-red-500 rounded-2xl text-[10px] font-black uppercase tracking-widest text-center animate-in fade-in">
+                 <div className="mt-4 p-4 bg-red-500/10 text-red-500 rounded-2xl text-[10px] font-black uppercase tracking-widest text-center">
                     {error}
                  </div>
                )}
@@ -383,6 +379,12 @@ const ScanPage: React.FC = () => {
           </div>
         )}
       </div>
+      <style>{`
+        @keyframes scan {
+          0%, 100% { top: 10%; }
+          50% { top: 90%; }
+        }
+      `}</style>
     </div>
   );
 };
