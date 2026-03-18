@@ -39,6 +39,7 @@ export default async function handler(req: any, res: any) {
         customer: data?.customer,
         bags: data?.bags,
         dropOff: data?.dropOff,
+        pickUp: data?.pickUp,
         status: data?.status
       }
     });
