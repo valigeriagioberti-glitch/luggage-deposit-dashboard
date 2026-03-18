@@ -22,6 +22,10 @@ interface BookingSummary {
     date: string;
     time: string;
   };
+  pickUp: {
+    date: string;
+    time: string;
+  };
   status: any;
 }
 
@@ -344,15 +348,36 @@ const ScanPage: React.FC = () => {
                       <p className="font-black text-slate-900 text-lg">{booking.customer.name}</p>
                     </div>
                     <div className="border-t border-slate-200 pt-4">
-                      <div className="flex justify-between items-start mb-4">
+                      <div className="grid grid-cols-2 gap-4 mb-4">
                         <div>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Schedule</p>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Drop-off</p>
                           <p className="font-bold text-slate-900 text-sm">{booking.dropOff.date}</p>
                           <p className="text-xs text-slate-500">{booking.dropOff.time}</p>
                         </div>
                         <div className="text-right">
-                          <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Total Bags</p>
-                          <p className="font-black text-slate-900 text-xl">{booking.bags.small + booking.bags.medium + booking.bags.large}</p>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Pick-up</p>
+                          <p className="font-bold text-slate-900 text-sm">{booking.pickUp.date}</p>
+                          <p className="text-xs text-slate-500">{booking.pickUp.time}</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="border-t border-slate-200 pt-4">
+                      <div className="flex justify-between items-center mb-3">
+                        <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Inventory</h4>
+                        <span className="text-[10px] font-black text-slate-900">{booking.bags.small + booking.bags.medium + booking.bags.large} Total</span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2">
+                        <div className="text-center p-2 bg-white rounded-xl border border-slate-100">
+                           <p className="text-base font-black text-slate-900">{booking.bags.small}</p>
+                           <p className="text-[7px] font-bold text-slate-400 uppercase">S</p>
+                        </div>
+                        <div className="text-center p-2 bg-white rounded-xl border border-slate-100">
+                           <p className="text-base font-black text-slate-900">{booking.bags.medium}</p>
+                           <p className="text-[7px] font-bold text-slate-400 uppercase">M</p>
+                        </div>
+                        <div className="text-center p-2 bg-white rounded-xl border border-slate-100">
+                           <p className="text-base font-black text-slate-900">{booking.bags.large}</p>
+                           <p className="text-[7px] font-bold text-slate-400 uppercase">L</p>
                         </div>
                       </div>
                     </div>
