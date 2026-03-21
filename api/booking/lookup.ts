@@ -20,13 +20,21 @@ export default async function handler(req: any, res: any) {
   if (!bookingRef) return res.status(400).json({ error: 'Booking Reference is required' });
 
   try {
-    const bookingSnap = await db.collection('bookings')
+    let bookingSnap = await db.collection('bookings')
       .where('bookingRef', '==', bookingRef.toUpperCase())
       .limit(1)
       .get();
     
     if (bookingSnap.empty) {
-      return res.status(404).json({ error: 'Booking not found.' });
+      // Check archive if not found in active
+      bookingSnap = await db.collection('bookings_archive')
+        .where('bookingRef', '==', bookingRef.toUpperCase())
+        .limit(1)
+        .get();
+        
+      if (bookingSnap.empty) {
+        return res.status(404).json({ error: 'Booking not found.' });
+      }
     }
 
     const doc = bookingSnap.docs[0];

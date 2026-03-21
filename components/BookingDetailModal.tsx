@@ -38,10 +38,28 @@ const BookingDetailModal: React.FC<BookingDetailModalProps> = ({ booking, onClos
         return;
       }
 
-      const bookingRef = doc(db, 'bookings', booking.id);
+      if (newStatus === 'checked_in') {
+        const response = await fetch('/api/booking/checkin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            bookingRef: booking.bookingRef,
+            adminEmail: auth.currentUser?.email 
+          }),
+        });
+        
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error || 'Failed to check in booking');
+        }
+        
+        onClose();
+        return;
+      }
+
+      const collectionName = isArchived ? 'bookings_archive' : 'bookings';
+      const bookingRef = doc(db, collectionName, booking.id);
       const updateData: any = { status: newStatus, updatedAt: serverTimestamp() };
-      
-      if (newStatus === 'checked_in') updateData.checkedInAt = serverTimestamp();
       
       await updateDoc(bookingRef, updateData);
       onUpdate();
@@ -56,14 +74,15 @@ const BookingDetailModal: React.FC<BookingDetailModalProps> = ({ booking, onClos
   const saveData = async () => {
     setUpdating(true);
     try {
-      const bookingRef = doc(db, 'bookings', booking.id);
+      const collectionName = !!booking.archivedAt ? 'bookings_archive' : 'bookings';
+      const bookingRef = doc(db, collectionName, booking.id);
       await updateDoc(bookingRef, { 
         'dropOff.notes': notes,
         'address': address 
       });
       onUpdate();
     } catch (err) {
-      alert('Failed to save data. Note: Archived bookings are read-only.');
+      alert('Failed to save data.');
     } finally {
       setUpdating(false);
     }
@@ -160,7 +179,7 @@ const BookingDetailModal: React.FC<BookingDetailModalProps> = ({ booking, onClos
           </div>
 
           {/* EDITABLE FIELDS */}
-          {!isArchived && (
+          {(!isArchived || booking.status === 'checked_in') && (
             <div className="space-y-4">
               <div className="space-y-2">
                 <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Address</h4>
@@ -196,7 +215,7 @@ const BookingDetailModal: React.FC<BookingDetailModalProps> = ({ booking, onClos
         </div>
 
         {/* STICKY BOTTOM ACTIONS */}
-        {!isArchived && (
+        {(!isArchived || booking.status === 'checked_in') && (
           <div className="flex-none p-4 pb-8 sm:p-6 bg-white border-t border-slate-100 shadow-[0_-10px_30px_rgba(0,0,0,0.05)] rounded-t-[2.5rem] sm:rounded-none z-20">
             <div className="flex flex-col gap-3 sm:flex-row sm:gap-3 max-w-lg mx-auto">
               <button 

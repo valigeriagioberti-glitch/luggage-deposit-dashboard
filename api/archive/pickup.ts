@@ -21,14 +21,25 @@ export default async function handler(req: any, res: any) {
   if (!bookingRef) return res.status(400).json({ error: 'Booking Reference is required' });
 
   try {
-    // Locate the booking in the active collection
-    const bookingSnap = await db.collection('bookings')
+    // First check active collection
+    let bookingSnap = await db.collection('bookings')
       .where('bookingRef', '==', bookingRef.toUpperCase())
       .limit(1)
       .get();
     
+    let isArchived = false;
+
     if (bookingSnap.empty) {
-      return res.status(404).json({ error: 'Active booking not found.' });
+      // Check archive collection
+      bookingSnap = await db.collection('bookings_archive')
+        .where('bookingRef', '==', bookingRef.toUpperCase())
+        .limit(1)
+        .get();
+        
+      if (bookingSnap.empty) {
+        return res.status(404).json({ error: 'Booking not found.' });
+      }
+      isArchived = true;
     }
 
     const doc = bookingSnap.docs[0];
@@ -37,23 +48,31 @@ export default async function handler(req: any, res: any) {
     const originalRef = doc.ref;
 
     const batch = db.batch();
-    const archiveRef = db.collection('bookings_archive').doc(docId);
-
-    // Prepare updated data for archive
-    const updatedData = {
-      ...data,
-      status: 'picked_up',
-      pickedUpAt: FieldValue.serverTimestamp(),
-      updatedAt: FieldValue.serverTimestamp(),
-      archivedAt: FieldValue.serverTimestamp(),
-      pickedUpBy: adminEmail || 'unknown_admin'
-    };
-
-    // 1. Write to archive
-    batch.set(archiveRef, updatedData);
     
-    // 2. Delete from active
-    batch.delete(originalRef);
+    if (isArchived) {
+      // Just update the archive document
+      batch.update(originalRef, {
+        status: 'picked_up',
+        pickedUpAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+        pickedUpBy: adminEmail || 'unknown_admin'
+      });
+    } else {
+      // Move from active to archive
+      const archiveRef = db.collection('bookings_archive').doc(docId);
+      const updatedData = {
+        ...data,
+        status: 'picked_up',
+        pickedUpAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+        archivedAt: FieldValue.serverTimestamp(),
+        pickedUpBy: adminEmail || 'unknown_admin'
+      };
+      // 1. Write to archive
+      batch.set(archiveRef, updatedData);
+      // 2. Delete from active
+      batch.delete(originalRef);
+    }
 
     await batch.commit();
 

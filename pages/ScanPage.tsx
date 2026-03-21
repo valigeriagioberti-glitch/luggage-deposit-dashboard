@@ -204,7 +204,7 @@ const ScanPage: React.FC = () => {
       });
       if (response.ok) {
         triggerVibrate();
-        setSuccessMessage(action === 'checkin' ? 'Checked in successfully ✅' : 'Picked up successfully ✅ Archived');
+        setSuccessMessage(action === 'checkin' ? 'Checked in successfully ✅ Archived' : 'Picked up successfully ✅ Archived');
         
         // Update local status so UI reflects success immediately if not yet auto-navigated
         setBooking(prev => prev ? { ...prev, status: action === 'checkin' ? 'checked_in' : 'picked_up' } : null);

@@ -29,14 +29,30 @@ export default async function handler(req: any, res: any) {
       return res.status(404).json({ error: 'Booking not found.' });
     }
 
-    const docRef = bookingSnap.docs[0].ref;
+    const doc = bookingSnap.docs[0];
+    const data = doc.data();
+    const docId = doc.id;
+    const originalRef = doc.ref;
     
-    await docRef.update({
+    const batch = db.batch();
+    const archiveRef = db.collection('bookings_archive').doc(docId);
+
+    const updatedData = {
+      ...data,
       status: 'checked_in',
       checkedInAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
+      archivedAt: FieldValue.serverTimestamp(),
       checkedInBy: adminEmail || 'unknown_admin'
-    });
+    };
+
+    // 1. Write to archive
+    batch.set(archiveRef, updatedData);
+    
+    // 2. Delete from active
+    batch.delete(originalRef);
+
+    await batch.commit();
 
     return res.status(200).json({ success: true });
 
