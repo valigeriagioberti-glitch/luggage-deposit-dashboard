@@ -351,13 +351,13 @@ const ScanPage: React.FC = () => {
                       <div className="grid grid-cols-2 gap-4 mb-4">
                         <div>
                           <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Drop-off</p>
-                          <p className="font-bold text-slate-900 text-sm">{booking.dropOff.date}</p>
-                          <p className="text-xs text-slate-500">{booking.dropOff.time}</p>
+                          <p className="font-bold text-slate-900 text-sm">{booking.dropOff?.date || 'N/A'}</p>
+                          <p className="text-xs text-slate-500">{booking.dropOff?.time || 'N/A'}</p>
                         </div>
                         <div className="text-right">
                           <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Pick-up</p>
-                          <p className="font-bold text-slate-900 text-sm">{booking.pickUp.date}</p>
-                          <p className="text-xs text-slate-500">{booking.pickUp.time}</p>
+                          <p className="font-bold text-slate-900 text-sm">{booking.pickUp?.date || 'N/A'}</p>
+                          <p className="text-xs text-slate-500">{booking.pickUp?.time || 'N/A'}</p>
                         </div>
                       </div>
                     </div>

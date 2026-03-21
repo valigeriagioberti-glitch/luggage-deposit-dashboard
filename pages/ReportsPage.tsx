@@ -62,9 +62,9 @@ const ReportsPage: React.FC = () => {
               datetime: data.dropOff?.datetime ?? null,
             },
             pickUp: {
-              date: String(data.pickUp?.date ?? ""),
-              time: String(data.pickUp?.time ?? ""),
-              datetime: data.pickUp?.datetime ?? null,
+              date: String(data.pickUp?.date ?? data.pickup?.date ?? ""),
+              time: String(data.pickUp?.time ?? data.pickup?.time ?? ""),
+              datetime: data.pickUp?.datetime ?? data.pickup?.datetime ?? null,
             },
             billableDays: Number(data.billableDays ?? 0),
             bags: {

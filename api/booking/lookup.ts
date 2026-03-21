@@ -38,8 +38,14 @@ export default async function handler(req: any, res: any) {
         bookingRef: data?.bookingRef,
         customer: data?.customer,
         bags: data?.bags,
-        dropOff: data?.dropOff,
-        pickUp: data?.pickUp,
+        dropOff: {
+          date: data?.dropOff?.date || "",
+          time: data?.dropOff?.time || ""
+        },
+        pickUp: {
+          date: data?.pickUp?.date || data?.pickup?.date || "",
+          time: data?.pickUp?.time || data?.pickup?.time || ""
+        },
         status: data?.status
       }
     });

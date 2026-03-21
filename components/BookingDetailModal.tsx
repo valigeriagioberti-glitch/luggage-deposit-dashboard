@@ -127,13 +127,13 @@ const BookingDetailModal: React.FC<BookingDetailModalProps> = ({ booking, onClos
           <div className="grid grid-cols-2 gap-3">
             <div className="p-4 bg-blue-50/50 rounded-2xl border border-blue-100/50">
               <p className="text-[8px] font-black text-blue-400 uppercase tracking-widest mb-1">Drop-off</p>
-              <p className="font-black text-slate-900 text-xs">{booking.dropOff.date}</p>
-              <p className="text-[9px] text-blue-600 font-bold">{booking.dropOff.time}</p>
+              <p className="font-black text-slate-900 text-xs">{booking.dropOff?.date || 'N/A'}</p>
+              <p className="text-[9px] text-blue-600 font-bold">{booking.dropOff?.time || 'N/A'}</p>
             </div>
             <div className="p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100/50">
               <p className="text-[8px] font-black text-emerald-400 uppercase tracking-widest mb-1">Pick-up</p>
-              <p className="font-black text-slate-900 text-xs">{booking.pickUp.date}</p>
-              <p className="text-[9px] text-emerald-600 font-bold">{booking.pickUp.time}</p>
+              <p className="font-black text-slate-900 text-xs">{booking.pickUp?.date || 'N/A'}</p>
+              <p className="text-[9px] text-emerald-600 font-bold">{booking.pickUp?.time || 'N/A'}</p>
             </div>
           </div>
 
