@@ -66,6 +66,24 @@ const ScanPage: React.FC = () => {
     }
   };
 
+  const playScanSound = () => {
+    try {
+      const audio = new Audio('/scan-success.mp3');
+      audio.play().catch(e => console.log('Audio play failed:', e));
+    } catch (e) {
+      console.log('Audio creation failed:', e);
+    }
+  };
+
+  const playCheckinSound = () => {
+    try {
+      const audio = new Audio('/checkin-success.mp3');
+      audio.play().catch(e => console.log('Audio play failed:', e));
+    } catch (e) {
+      console.log('Audio creation failed:', e);
+    }
+  };
+
   const triggerErrorVibrate = () => {
     if ('vibrate' in navigator) {
       // Distinct pattern for errors: three short bursts
@@ -85,6 +103,7 @@ const ScanPage: React.FC = () => {
       });
       const data = await response.json();
       if (response.ok) {
+        playScanSound();
         setBooking(data.booking);
         await stopCamera();
       } else {
@@ -204,6 +223,9 @@ const ScanPage: React.FC = () => {
       });
       if (response.ok) {
         triggerVibrate();
+        if (action === 'checkin') {
+          playCheckinSound();
+        }
         setSuccessMessage(action === 'checkin' ? 'Checked in successfully ✅' : 'Picked up successfully ✅ Archived');
         
         // Update local status so UI reflects success immediately if not yet auto-navigated
@@ -288,7 +310,7 @@ const ScanPage: React.FC = () => {
             
             {booking && (
               <div className="mb-8 p-4 bg-white/10 rounded-2xl border border-white/20">
-                <p className="text-[10px] font-black text-emerald-300 uppercase tracking-widest mb-1">Scheduled Pick-up</p>
+                <p className="text-[10px] font-black text-emerald-300 uppercase tracking-widest mb-1">Pick-up</p>
                 <p className="text-white font-black text-xl">{booking.pickUp?.time || 'N/A'}</p>
                 <p className="text-emerald-100/70 text-xs font-bold">{booking.pickUp?.date || 'N/A'}</p>
                 {booking.pickedUpAt && (
@@ -370,7 +392,7 @@ const ScanPage: React.FC = () => {
                           <p className="text-xs text-slate-500">{booking.dropOff?.time || 'N/A'}</p>
                         </div>
                         <div className="text-right">
-                          <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Scheduled Pick-up</p>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Pick-up</p>
                           <p className="font-bold text-slate-900 text-sm">{booking.pickUp?.date || 'N/A'}</p>
                           <p className="text-xs text-slate-500">{booking.pickUp?.time || 'N/A'}</p>
                         </div>

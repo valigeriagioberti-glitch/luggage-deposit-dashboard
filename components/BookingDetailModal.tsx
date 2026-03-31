@@ -166,7 +166,7 @@ const BookingDetailModal: React.FC<BookingDetailModalProps> = ({ booking, onClos
               <p className="text-[9px] text-blue-600 font-bold">{booking.dropOff?.time || 'N/A'}</p>
             </div>
             <div className="p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100/50">
-              <p className="text-[8px] font-black text-emerald-400 uppercase tracking-widest mb-1">Scheduled Pick-up</p>
+              <p className="text-[8px] font-black text-emerald-400 uppercase tracking-widest mb-1">Pick-up</p>
               <p className="font-black text-slate-900 text-xs">{booking.pickUp?.date || 'N/A'}</p>
               <p className="text-[9px] text-emerald-600 font-bold">{booking.pickUp?.time || 'N/A'}</p>
             </div>
