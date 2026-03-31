@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Html5Qrcode } from 'html5-qrcode';
 import { auth } from '../firebase';
+import { playSuccessBeep, playCheckinBeep, playErrorBeep, resumeAudio } from '../lib/audio';
 import StatusBadge from '../components/StatusBadge';
 
 interface BookingSummary {
@@ -67,21 +68,11 @@ const ScanPage: React.FC = () => {
   };
 
   const playScanSound = () => {
-    try {
-      const audio = new Audio('/scan-success.mp3');
-      audio.play().catch(e => console.log('Audio play failed:', e));
-    } catch (e) {
-      console.log('Audio creation failed:', e);
-    }
+    playSuccessBeep();
   };
 
   const playCheckinSound = () => {
-    try {
-      const audio = new Audio('/checkin-success.mp3');
-      audio.play().catch(e => console.log('Audio play failed:', e));
-    } catch (e) {
-      console.log('Audio creation failed:', e);
-    }
+    playCheckinBeep();
   };
 
   const triggerErrorVibrate = () => {
@@ -108,12 +99,14 @@ const ScanPage: React.FC = () => {
         await stopCamera();
       } else {
         // Handle lookup failure
+        playErrorBeep();
         triggerErrorVibrate();
         setError(data.error || 'Booking not found in our system.');
         setBooking(null);
         await stopCamera();
       }
     } catch (err) {
+      playErrorBeep();
       triggerErrorVibrate();
       setError('Connection error. Please check your internet.');
       await stopCamera();
@@ -133,6 +126,7 @@ const ScanPage: React.FC = () => {
     
     if (!extracted) {
       // Handle invalid QR extraction
+      playErrorBeep();
       triggerErrorVibrate();
       setError("This is not a valid Luggage Deposit Rome QR code.");
       await stopCamera();
@@ -162,6 +156,7 @@ const ScanPage: React.FC = () => {
   };
 
   const startCamera = async () => {
+    resumeAudio();
     setError(null);
     setCameraPermissionError(false);
     
@@ -210,6 +205,7 @@ const ScanPage: React.FC = () => {
   };
 
   const handleAction = async (action: 'checkin' | 'pickup') => {
+    resumeAudio();
     if (!bookingRef || !booking) return;
     setLoading(true);
     setError(null);
@@ -235,10 +231,12 @@ const ScanPage: React.FC = () => {
         setTimeout(() => navigate('/'), 2000);
       } else {
         const data = await response.json();
+        playErrorBeep();
         triggerErrorVibrate();
         setError(data.error || 'Action failed.');
       }
     } catch (err) {
+      playErrorBeep();
       triggerErrorVibrate();
       setError('Connection error.');
     } finally {
@@ -263,6 +261,7 @@ const ScanPage: React.FC = () => {
 
   const handleManualLookup = (e: React.FormEvent) => {
     e.preventDefault();
+    resumeAudio();
     if (manualInput) {
       validateAndProcessInput(manualInput);
     }
