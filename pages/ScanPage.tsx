@@ -286,6 +286,21 @@ const ScanPage: React.FC = () => {
             <h2 className="text-3xl font-black text-white mb-4">Success!</h2>
             <p className="text-emerald-400 font-bold text-lg leading-tight mb-8">{successMessage}</p>
             
+            {booking && (
+              <div className="mb-8 p-4 bg-white/10 rounded-2xl border border-white/20">
+                <p className="text-[10px] font-black text-emerald-300 uppercase tracking-widest mb-1">Scheduled Pick-up</p>
+                <p className="text-white font-black text-xl">{booking.pickUp?.time || 'N/A'}</p>
+                <p className="text-emerald-100/70 text-xs font-bold">{booking.pickUp?.date || 'N/A'}</p>
+                {booking.pickedUpAt && (
+                  <div className="mt-4 pt-4 border-t border-white/10">
+                    <p className="text-[10px] font-black text-blue-300 uppercase tracking-widest mb-1">Actual Pick-up</p>
+                    <p className="text-white font-black text-xl">{new Date(booking.pickedUpAt.seconds * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
+                    <p className="text-blue-100/70 text-xs font-bold">{new Date(booking.pickedUpAt.seconds * 1000).toLocaleDateString()}</p>
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="space-y-3">
               <button 
                 onClick={resetScanner}
@@ -355,11 +370,18 @@ const ScanPage: React.FC = () => {
                           <p className="text-xs text-slate-500">{booking.dropOff?.time || 'N/A'}</p>
                         </div>
                         <div className="text-right">
-                          <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Pick-up</p>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Scheduled Pick-up</p>
                           <p className="font-bold text-slate-900 text-sm">{booking.pickUp?.date || 'N/A'}</p>
                           <p className="text-xs text-slate-500">{booking.pickUp?.time || 'N/A'}</p>
                         </div>
                       </div>
+                      {booking.pickedUpAt && (
+                        <div className="mt-4 pt-4 border-t border-slate-200 text-right">
+                          <p className="text-[10px] font-bold text-blue-500 uppercase mb-1">Actual Pick-up</p>
+                          <p className="font-bold text-slate-900 text-sm">{new Date(booking.pickedUpAt.seconds * 1000).toLocaleDateString()}</p>
+                          <p className="text-xs font-black text-blue-600">{new Date(booking.pickedUpAt.seconds * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
+                        </div>
+                      )}
                     </div>
                     <div className="border-t border-slate-200 pt-4">
                       <div className="flex justify-between items-center mb-3">

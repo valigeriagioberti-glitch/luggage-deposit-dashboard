@@ -50,6 +50,10 @@ export default async function handler(req: any, res: any) {
         customer: data?.customer,
         bags: data?.bags,
         dropOff: data?.dropOff,
+        pickUp: {
+          date: data?.pickUp?.date || data?.pickup?.date || "",
+          time: data?.pickUp?.time || data?.pickup?.time || ""
+        },
         status: data?.status
       }
     });

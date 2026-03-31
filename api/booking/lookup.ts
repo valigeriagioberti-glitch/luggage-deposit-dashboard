@@ -54,6 +54,7 @@ export default async function handler(req: any, res: any) {
           date: data?.pickUp?.date || data?.pickup?.date || "",
           time: data?.pickUp?.time || data?.pickup?.time || ""
         },
+        pickedUpAt: data?.pickedUpAt || null,
         status: data?.status
       }
     });

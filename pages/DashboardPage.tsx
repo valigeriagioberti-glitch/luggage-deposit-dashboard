@@ -49,6 +49,7 @@ const DashboardPage: React.FC = () => {
               stripeSessionId: String(data.stripeSessionId ?? ""),
               createdAt: data.createdAt ?? null,
               archivedAt: data.archivedAt ?? null,
+              pickedUpAt: data.pickedUpAt ?? null,
               bookedOnRome: "",
               customer: {
                 name: String(data.customer?.name ?? ""),
@@ -241,7 +242,7 @@ const DashboardPage: React.FC = () => {
                     <tr className="bg-slate-50/50 text-slate-400 text-[8px] lg:text-xs font-black uppercase tracking-[0.2em] border-b border-slate-50">
                       <th className="px-4 py-3 lg:px-10 lg:py-6 w-[45%] sm:w-auto">Reference</th>
                       <th className="px-4 py-3 lg:px-10 lg:py-6 w-[55%] sm:w-auto">Guest</th>
-                      <th className="hidden lg:table-cell px-10 py-6">Drop-off</th>
+                      <th className="hidden lg:table-cell px-10 py-6">Schedule</th>
                       <th className="hidden sm:table-cell px-6 py-4 lg:px-10 lg:py-6 text-center">Bags</th>
                       <th className="hidden sm:table-cell px-6 py-4 lg:px-10 lg:py-6 text-right">Total</th>
                     </tr>
@@ -262,8 +263,16 @@ const DashboardPage: React.FC = () => {
                           <p className="text-[9px] lg:text-sm text-slate-400 font-bold uppercase tracking-tight truncate">{booking.dropOff.date} • {booking.dropOff.time}</p>
                         </td>
                         <td className="hidden lg:table-cell px-10 py-8 align-middle">
-                          <p className="text-xs lg:text-base font-black text-slate-900">{booking.dropOff.date}</p>
-                          <p className="text-[9px] lg:text-sm text-slate-400 font-bold mt-0.5 uppercase tracking-tighter">{booking.dropOff.time}</p>
+                          <div className="flex flex-col gap-3">
+                            <div>
+                              <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest mb-0.5">Drop-off</p>
+                              <p className="text-xs lg:text-sm font-black text-slate-900">{booking.dropOff.date} <span className="text-slate-400">{booking.dropOff.time}</span></p>
+                            </div>
+                            <div>
+                              <p className="text-[9px] font-black text-emerald-400 uppercase tracking-widest mb-0.5">Pick-up</p>
+                              <p className="text-xs lg:text-sm font-black text-slate-900">{booking.pickUp.date} <span className="text-slate-400">{booking.pickUp.time}</span></p>
+                            </div>
+                          </div>
                         </td>
                         <td className="hidden sm:table-cell px-6 py-4 lg:px-10 lg:py-8 align-middle text-center">
                           <span className="inline-flex items-center justify-center w-7 h-7 lg:w-11 lg:h-11 bg-slate-50 rounded-lg lg:rounded-2xl font-black text-[10px] lg:text-sm text-slate-600 border border-slate-100">

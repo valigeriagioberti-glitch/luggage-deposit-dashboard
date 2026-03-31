@@ -51,12 +51,15 @@ export default async function handler(req: any, res: any) {
     
     if (isArchived) {
       // Just update the archive document
-      batch.update(originalRef, {
+      const updatePayload: any = {
         status: 'picked_up',
-        pickedUpAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
         pickedUpBy: adminEmail || 'unknown_admin'
-      });
+      };
+      if (!data.pickedUpAt) {
+        updatePayload.pickedUpAt = FieldValue.serverTimestamp();
+      }
+      batch.update(originalRef, updatePayload);
     } else {
       // Move from active to archive
       const archiveRef = db.collection('bookings_archive').doc(docId);

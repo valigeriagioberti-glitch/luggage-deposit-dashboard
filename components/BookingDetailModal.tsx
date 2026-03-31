@@ -14,6 +14,8 @@ interface BookingDetailModalProps {
 const BookingDetailModal: React.FC<BookingDetailModalProps> = ({ booking, onClose, onUpdate }) => {
   const [notes, setNotes] = useState(booking.notes || '');
   const [address, setAddress] = useState(booking.address || '');
+  const [pickUpDate, setPickUpDate] = useState(booking.pickUp?.date || '');
+  const [pickUpTime, setPickUpTime] = useState(booking.pickUp?.time || '');
   const [updating, setUpdating] = useState(false);
 
   const updateStatus = async (newStatus: BookingStatus) => {
@@ -74,10 +76,26 @@ const BookingDetailModal: React.FC<BookingDetailModalProps> = ({ booking, onClos
     setUpdating(true);
     try {
       const bookingRef = doc(db, 'bookings', booking.id);
-      await updateDoc(bookingRef, { 
+      
+      const updatePayload: any = { 
         'dropOff.notes': notes,
-        'address': address 
-      });
+        'address': address,
+        'pickUp.date': pickUpDate,
+        'pickUp.time': pickUpTime,
+        'pickup.date': pickUpDate,
+        'pickup.time': pickUpTime
+      };
+
+      if (pickUpDate && pickUpTime) {
+        const datetimeStr = `${pickUpDate}T${pickUpTime}:00`;
+        const datetimeObj = new Date(datetimeStr);
+        if (!isNaN(datetimeObj.getTime())) {
+          updatePayload['pickUp.datetime'] = datetimeObj;
+          updatePayload['pickup.datetime'] = datetimeObj;
+        }
+      }
+
+      await updateDoc(bookingRef, updatePayload);
       onUpdate();
     } catch (err) {
       alert('Failed to save data. Note: Archived bookings are read-only.');
@@ -148,11 +166,23 @@ const BookingDetailModal: React.FC<BookingDetailModalProps> = ({ booking, onClos
               <p className="text-[9px] text-blue-600 font-bold">{booking.dropOff?.time || 'N/A'}</p>
             </div>
             <div className="p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100/50">
-              <p className="text-[8px] font-black text-emerald-400 uppercase tracking-widest mb-1">Pick-up</p>
+              <p className="text-[8px] font-black text-emerald-400 uppercase tracking-widest mb-1">Scheduled Pick-up</p>
               <p className="font-black text-slate-900 text-xs">{booking.pickUp?.date || 'N/A'}</p>
               <p className="text-[9px] text-emerald-600 font-bold">{booking.pickUp?.time || 'N/A'}</p>
             </div>
           </div>
+          
+          {booking.pickedUpAt && (
+            <div className="p-4 bg-slate-900 rounded-2xl border border-slate-800 text-white flex justify-between items-center">
+              <div>
+                <p className="text-[8px] font-black text-emerald-400 uppercase tracking-widest mb-1">Actual Pick-up</p>
+                <p className="font-black text-sm">{new Date(booking.pickedUpAt.seconds * 1000).toLocaleDateString()}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-xl font-black text-emerald-400">{new Date(booking.pickedUpAt.seconds * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
+              </div>
+            </div>
+          )}
 
           {/* Bag Inventory */}
           <div className="bg-slate-50 p-5 rounded-3xl border border-slate-100">
@@ -188,6 +218,27 @@ const BookingDetailModal: React.FC<BookingDetailModalProps> = ({ booking, onClos
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
                 />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Pick-up Date</h4>
+                  <input
+                    type="date"
+                    className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-blue-500 focus:bg-white outline-none transition-all text-sm font-medium text-slate-700"
+                    value={pickUpDate}
+                    onChange={(e) => setPickUpDate(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Pick-up Time</h4>
+                  <input
+                    type="time"
+                    className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-blue-500 focus:bg-white outline-none transition-all text-sm font-medium text-slate-700"
+                    value={pickUpTime}
+                    onChange={(e) => setPickUpTime(e.target.value)}
+                  />
+                </div>
               </div>
 
               <div className="space-y-2">
