@@ -210,25 +210,40 @@ const ScanPage: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      // Use the ARCHIVE endpoint for pickup to match business rules
-      const endpoint = action === 'checkin' ? '/api/booking/checkin' : '/api/archive/pickup';
-      const response = await fetch(endpoint, {
+      if (action === 'pickup') {
+        const docRef = doc(db, 'bookings', booking.id);
+        await updateDoc(docRef, {
+          status: 'picked_up',
+          pickedUpAt: new Date()
+        });
+        
+        triggerVibrate();
+        playCheckinSound(); // same as drop-off
+        setSuccessMessage('Pickup completed ✅');
+        setBooking(prev => prev ? { ...prev, status: 'picked_up' } : null);
+
+        setTimeout(() => {
+          resetScanner();
+        }, 800);
+        return;
+      }
+
+      // Checkin uses API
+      const response = await fetch('/api/booking/checkin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ bookingRef, adminEmail: auth.currentUser?.email }),
       });
       if (response.ok) {
         triggerVibrate();
-        if (action === 'checkin') {
-          playCheckinSound();
-        }
-        setSuccessMessage(action === 'checkin' ? 'Checked in successfully ✅' : 'Picked up successfully ✅ Archived');
+        playCheckinSound();
+        setSuccessMessage('Checked in successfully ✅');
         
-        // Update local status so UI reflects success immediately if not yet auto-navigated
-        setBooking(prev => prev ? { ...prev, status: action === 'checkin' ? 'checked_in' : 'picked_up' } : null);
+        // Update local status so UI reflects success immediately
+        setBooking(prev => prev ? { ...prev, status: 'checked_in' } : null);
 
-        // Auto-navigate after 2 seconds
-        setTimeout(() => navigate('/'), 2000);
+        // Reset to scanner after a short delay
+        setTimeout(() => resetScanner(), 800);
       } else {
         const data = await response.json();
         playErrorBeep();
@@ -238,7 +253,8 @@ const ScanPage: React.FC = () => {
     } catch (err) {
       playErrorBeep();
       triggerErrorVibrate();
-      setError('Connection error.');
+      console.error(err);
+      setError('Pickup failed. Please try again.');
     } finally {
       setLoading(false);
     }

@@ -4,6 +4,7 @@ import { Booking, BookingStatus } from '../types';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import StatusBadge from './StatusBadge';
+import { playSuccessBeep } from '../lib/audio';
 
 interface BookingDetailModalProps {
   booking: Booking;
@@ -18,25 +19,23 @@ const BookingDetailModal: React.FC<BookingDetailModalProps> = ({ booking, onClos
   const [pickUpTime, setPickUpTime] = useState(booking.pickUp?.time || '');
   const [updating, setUpdating] = useState(false);
 
+  const [success, setSuccess] = useState(false);
+
   const updateStatus = async (newStatus: BookingStatus) => {
     setUpdating(true);
     try {
       if (newStatus === 'picked_up') {
-        const response = await fetch('/api/archive/pickup', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            bookingRef: booking.bookingRef,
-            adminEmail: auth.currentUser?.email 
-          }),
+        const bookingRef = doc(db, 'bookings', booking.id);
+        await updateDoc(bookingRef, {
+          status: 'picked_up',
+          pickedUpAt: new Date()
         });
         
-        if (!response.ok) {
-          const data = await response.json();
-          throw new Error(data.error || 'Failed to archive booking');
-        }
-        
-        onClose();
+        playSuccessBeep();
+        setSuccess(true);
+        setTimeout(() => {
+          onClose(); // Auto close similar to drop-off
+        }, 800);
         return;
       }
 
@@ -266,10 +265,15 @@ const BookingDetailModal: React.FC<BookingDetailModalProps> = ({ booking, onClos
         {/* STICKY BOTTOM ACTIONS */}
         {!isArchived && (
           <div className="flex-none p-4 pb-8 sm:p-6 bg-white border-t border-slate-100 shadow-[0_-10px_30px_rgba(0,0,0,0.05)] rounded-t-[2.5rem] sm:rounded-none z-20">
-            <div className="flex flex-col gap-3 sm:flex-row sm:gap-3 max-w-lg mx-auto">
-              <button 
-                onClick={() => updateStatus('checked_in')}
-                disabled={updating || booking.status !== 'paid'}
+            {success ? (
+              <div className="flex justify-center items-center h-14 bg-emerald-50 text-emerald-600 font-black rounded-xl animate-in zoom-in-95 duration-200">
+                Marked as picked up ✅
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3 sm:flex-row sm:gap-3 max-w-lg mx-auto">
+                <button 
+                  onClick={() => updateStatus('checked_in')}
+                  disabled={updating || booking.status !== 'paid'}
                 className={`w-full h-14 rounded-xl text-base font-black transition-all active:scale-95 
                   ${booking.status === 'paid' 
                     ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' 
@@ -297,6 +301,7 @@ const BookingDetailModal: React.FC<BookingDetailModalProps> = ({ booking, onClos
                 Cancel
               </button>
             </div>
+            )}
           </div>
         )}
       </div>
