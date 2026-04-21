@@ -25,11 +25,19 @@ const BookingDetailModal: React.FC<BookingDetailModalProps> = ({ booking, onClos
     setUpdating(true);
     try {
       if (newStatus === 'picked_up') {
-        const bookingRef = doc(db, 'bookings', booking.id);
-        await updateDoc(bookingRef, {
-          status: 'picked_up',
-          pickedUpAt: new Date()
+        const response = await fetch('/api/archive/pickup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            bookingRef: booking.bookingRef,
+            adminEmail: auth.currentUser?.email 
+          }),
         });
+        
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error || 'Failed to archive booking');
+        }
         
         playSuccessBeep();
         setSuccess(true);

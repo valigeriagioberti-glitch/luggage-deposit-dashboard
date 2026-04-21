@@ -211,11 +211,16 @@ const ScanPage: React.FC = () => {
     setError(null);
     try {
       if (action === 'pickup') {
-        const docRef = doc(db, 'bookings', booking.id);
-        await updateDoc(docRef, {
-          status: 'picked_up',
-          pickedUpAt: new Date()
+        const response = await fetch('/api/archive/pickup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ bookingRef, adminEmail: auth.currentUser?.email }),
         });
+        
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error || 'Failed to archive booking');
+        }
         
         triggerVibrate();
         playCheckinSound(); // same as drop-off
