@@ -43,6 +43,23 @@ const DashboardPage: React.FC = () => {
         (snapshot) => {
           const docs: Booking[] = snapshot.docs.map((d) => {
             const data: any = d.data();
+
+            const raw = data?.pickUp || data?.pickup || {};
+            let pickupDate = "";
+            let pickupTime = "";
+
+            if (raw.datetime) {
+              const dObj = raw.datetime.toDate ? raw.datetime.toDate() : new Date(raw.datetime.seconds ? raw.datetime.seconds * 1000 : raw.datetime);
+              pickupDate = dObj.toLocaleDateString();
+              pickupTime = dObj.toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit"
+              });
+            } else {
+              pickupDate = raw.date || "";
+              pickupTime = raw.time || "";
+            }
+
             return {
               id: d.id,
               bookingRef: String(data.bookingRef ?? ""),
@@ -62,9 +79,9 @@ const DashboardPage: React.FC = () => {
                 datetime: data.dropOff?.datetime ?? null,
               },
               pickUp: {
-                date: String(data.pickUp?.date ?? data.pickup?.date ?? ""),
-                time: String(data.pickUp?.time ?? data.pickup?.time ?? ""),
-                datetime: data.pickUp?.datetime ?? data.pickup?.datetime ?? null,
+                date: pickupDate,
+                time: pickupTime,
+                datetime: raw.datetime ?? null,
               },
               billableDays: Number(data.billableDays ?? 0),
               bags: {
