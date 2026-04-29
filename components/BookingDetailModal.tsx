@@ -183,10 +183,10 @@ const BookingDetailModal: React.FC<BookingDetailModalProps> = ({ booking, onClos
             <div className="p-4 bg-slate-900 rounded-2xl border border-slate-800 text-white flex justify-between items-center">
               <div>
                 <p className="text-[8px] font-black text-emerald-400 uppercase tracking-widest mb-1">Actual Pick-up</p>
-                <p className="font-black text-sm">{new Date(booking.pickedUpAt.seconds * 1000).toLocaleDateString()}</p>
+                <p className="font-black text-sm">{new Date(booking.pickedUpAt.seconds * 1000).toLocaleDateString('it-IT', { timeZone: 'Europe/Rome' })}</p>
               </div>
               <div className="text-right">
-                <p className="text-xl font-black text-emerald-400">{new Date(booking.pickedUpAt.seconds * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
+                <p className="text-xl font-black text-emerald-400">{new Date(booking.pickedUpAt.seconds * 1000).toLocaleTimeString('it-IT', { timeZone: 'Europe/Rome', hour: '2-digit', minute:'2-digit' })}</p>
               </div>
             </div>
           )}

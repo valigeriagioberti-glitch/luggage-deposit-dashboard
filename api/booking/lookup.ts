@@ -45,9 +45,12 @@ export default async function handler(req: any, res: any) {
     let pickupTime = "";
 
     if (raw.datetime) {
+      // Firebase Timestamp or ISO string
       const dObj = raw.datetime.toDate ? raw.datetime.toDate() : new Date(raw.datetime.seconds ? raw.datetime.seconds * 1000 : raw.datetime);
-      pickupDate = dObj.toLocaleDateString();
-      pickupTime = dObj.toLocaleTimeString([], {
+      
+      pickupDate = dObj.toLocaleDateString('it-IT', { timeZone: 'Europe/Rome' });
+      pickupTime = dObj.toLocaleTimeString('it-IT', {
+        timeZone: 'Europe/Rome',
         hour: "2-digit",
         minute: "2-digit"
       });

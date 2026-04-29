@@ -336,8 +336,12 @@ const ScanPage: React.FC = () => {
                 {booking.pickedUpAt && (
                   <div className="mt-4 pt-4 border-t border-white/10">
                     <p className="text-[10px] font-black text-blue-300 uppercase tracking-widest mb-1">Actual Pick-up</p>
-                    <p className="text-white font-black text-xl">{new Date(booking.pickedUpAt.seconds * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
-                    <p className="text-blue-100/70 text-xs font-bold">{new Date(booking.pickedUpAt.seconds * 1000).toLocaleDateString()}</p>
+                    <p className="text-white font-black text-xl">
+                      {new Date(booking.pickedUpAt.seconds * 1000).toLocaleTimeString('it-IT', { timeZone: 'Europe/Rome', hour: '2-digit', minute:'2-digit' })}
+                    </p>
+                    <p className="text-blue-100/70 text-xs font-bold">
+                      {new Date(booking.pickedUpAt.seconds * 1000).toLocaleDateString('it-IT', { timeZone: 'Europe/Rome' })}
+                    </p>
                   </div>
                 )}
               </div>
@@ -420,8 +424,8 @@ const ScanPage: React.FC = () => {
                       {booking.pickedUpAt && (
                         <div className="mt-4 pt-4 border-t border-slate-200 text-right">
                           <p className="text-[10px] font-bold text-blue-500 uppercase mb-1">Actual Pick-up</p>
-                          <p className="font-bold text-slate-900 text-sm">{new Date(booking.pickedUpAt.seconds * 1000).toLocaleDateString()}</p>
-                          <p className="text-xs font-black text-blue-600">{new Date(booking.pickedUpAt.seconds * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
+                          <p className="font-bold text-slate-900 text-sm">{new Date(booking.pickedUpAt.seconds * 1000).toLocaleDateString('it-IT', { timeZone: 'Europe/Rome' })}</p>
+                          <p className="text-xs font-black text-blue-600">{new Date(booking.pickedUpAt.seconds * 1000).toLocaleTimeString('it-IT', { timeZone: 'Europe/Rome', hour: '2-digit', minute:'2-digit' })}</p>
                         </div>
                       )}
                     </div>

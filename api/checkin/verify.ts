@@ -43,6 +43,23 @@ export default async function handler(req: any, res: any) {
     const doc = bookingSnap.docs[0];
     const data = doc.data();
     
+    const raw = data?.pickUp || data?.pickup || {};
+    let pickupDate = "";
+    let pickupTime = "";
+
+    if (raw.datetime) {
+      const dObj = raw.datetime.toDate ? raw.datetime.toDate() : new Date(raw.datetime.seconds ? raw.datetime.seconds * 1000 : raw.datetime);
+      pickupDate = dObj.toLocaleDateString('it-IT', { timeZone: 'Europe/Rome' });
+      pickupTime = dObj.toLocaleTimeString('it-IT', {
+        timeZone: 'Europe/Rome',
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+    } else {
+      pickupDate = raw.date || "";
+      pickupTime = raw.time || "";
+    }
+    
     return res.status(200).json({
       booking: {
         id: doc.id,
@@ -51,8 +68,9 @@ export default async function handler(req: any, res: any) {
         bags: data?.bags,
         dropOff: data?.dropOff,
         pickUp: {
-          date: data?.pickUp?.date || data?.pickup?.date || "",
-          time: data?.pickUp?.time || data?.pickup?.time || ""
+          date: pickupDate,
+          time: pickupTime,
+          datetime: raw.datetime || null
         },
         status: data?.status
       }
