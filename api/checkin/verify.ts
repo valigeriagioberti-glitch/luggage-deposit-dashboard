@@ -44,10 +44,10 @@ export default async function handler(req: any, res: any) {
     const data = doc.data();
     
     const raw = data?.pickUp || data?.pickup || {};
-    let pickupDate = "";
-    let pickupTime = "";
+    let pickupDate = raw.date || "";
+    let pickupTime = raw.time || "";
 
-    if (raw.datetime) {
+    if (!pickupDate && !pickupTime && raw.datetime) {
       const dObj = raw.datetime.toDate ? raw.datetime.toDate() : new Date(raw.datetime.seconds ? raw.datetime.seconds * 1000 : raw.datetime);
       pickupDate = dObj.toLocaleDateString('it-IT', { timeZone: 'Europe/Rome' });
       pickupTime = dObj.toLocaleTimeString('it-IT', {
@@ -55,9 +55,6 @@ export default async function handler(req: any, res: any) {
         hour: "2-digit",
         minute: "2-digit"
       });
-    } else {
-      pickupDate = raw.date || "";
-      pickupTime = raw.time || "";
     }
     
     return res.status(200).json({
