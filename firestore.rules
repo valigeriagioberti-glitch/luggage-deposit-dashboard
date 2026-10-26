@@ -13,6 +13,10 @@ service cloud.firestore {
     match /bookings/{bookingId} {
       allow read, write: if isAdmin();
     }
+
+    match /bookings_archive/{bookingId} {
+      allow read, write: if isAdmin();
+    }
     
     // Admins Collection: 
     // - Users can read their own admin entry to verify status

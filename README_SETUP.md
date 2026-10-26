@@ -31,8 +31,18 @@ Ensure the rules in `firestore.rules` are published to your Firebase project. Th
 - Only authenticated users found in the `admins` collection can read/write data.
 - The `active` flag must be `true`.
 
-## 4. End-to-End Test Checklist
+## 4. Automatic Archiving (7-Day Checked-In Rule)
+Bookings that have been **checked in** (`status: 'checked_in'`) but have **not been checked out** after **seven days** have passed from their scheduled pickup date are automatically archived:
+- **Moved**: Transferred from `bookings` to `bookings_archive`.
+- **Status in Archive**: Updated to `picked_up` with `autoArchived: true` and `archivedReason` recorded.
+- **Trigger Methods**:
+  1. **Automatic in Dashboard**: When an admin opens the dashboard, an automated background check checks for and auto-archives eligible overdue bookings.
+  2. **Cron / Webhook Endpoint**: Call `GET` or `POST` `/api/cron/auto-archive` (or `/api/cron/auto-pickup` or `/api/archive/auto-archive`).
+  3. **Manual Trigger**: Available via the "Run Auto-Archive (>7d)" button on the Orders dashboard and on the Reports page under "Database Maintenance".
+
+## 5. End-to-End Test Checklist
 - [ ] **Auth Check**: Try logging in with an email NOT in the allow-list. You should be redirected to the `/unauthorized` page.
 - [ ] **Admin Access**: Login with `giobertisnc42@gmail.com`. You should see the dashboard.
 - [ ] **Data Security**: Try to access Firestore via the browser console without being logged in (should be blocked by rules).
 - [ ] **Status Update**: Verify that changing a booking status (e.g., to "Checked In") updates Firestore correctly.
+- [ ] **Auto-Archive**: Verify that checked-in bookings older than 7 days from scheduled pickup are moved to archive with the auto-archived flag.

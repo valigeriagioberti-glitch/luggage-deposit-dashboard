@@ -21,6 +21,8 @@ const DashboardPage: React.FC = () => {
   const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [queryError, setQueryError] = useState<string | null>(null);
+  const [autoArchiving, setAutoArchiving] = useState(false);
+  const [autoArchiveNotice, setAutoArchiveNotice] = useState<string | null>(null);
 
   const logoUrl = "https://cdn.shopify.com/s/files/1/0753/8144/0861/files/cropped-Untitled-design-2025-09-11T094640.576_1.png?v=1765462614&width=160&format=webp";
 
@@ -93,6 +95,9 @@ const DashboardPage: React.FC = () => {
               notes: String(data.notes ?? data.dropOff?.notes ?? ""),
               address: String(data.address ?? ""),
               walletIssued: Boolean(data.walletIssued ?? false),
+              autoArchived: Boolean(data.autoArchived ?? false),
+              archivedReason: String(data.archivedReason ?? ""),
+              pickedUpBy: String(data.pickedUpBy ?? ""),
             };
           });
 
@@ -115,6 +120,59 @@ const DashboardPage: React.FC = () => {
       return () => {};
     }
   }, [viewMode]);
+
+  // Run automatic check on initial load for checked-in bookings older than 7 days from scheduled pickup
+  useEffect(() => {
+    const triggerAutoArchive = async () => {
+      try {
+        const lastCheck = sessionStorage.getItem('last_auto_archive_check');
+        const now = Date.now();
+        // Check at most once per 10 minutes per browser session
+        if (lastCheck && now - Number(lastCheck) < 10 * 60 * 1000) {
+          return;
+        }
+        sessionStorage.setItem('last_auto_archive_check', String(now));
+
+        const res = await fetch('/api/archive/auto-archive', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ days: 7, adminEmail: auth.currentUser?.email || 'system_auto_archive' })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.count > 0) {
+            setAutoArchiveNotice(`Auto-archived ${data.count} order(s) checked in > 7 days past scheduled pickup.`);
+          }
+        }
+      } catch (e) {
+        // Non-blocking background sync error
+      }
+    };
+
+    triggerAutoArchive();
+  }, []);
+
+  const handleManualAutoArchive = async () => {
+    setAutoArchiving(true);
+    setAutoArchiveNotice(null);
+    try {
+      const res = await fetch('/api/archive/auto-archive', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ days: 7, adminEmail: auth.currentUser?.email || 'admin_manual' })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setAutoArchiveNotice(data.message || `Successfully auto-archived ${data.count} bookings.`);
+      } else {
+        setAutoArchiveNotice(data.error || 'Failed to auto-archive.');
+      }
+    } catch (e) {
+      setAutoArchiveNotice('Network error while running auto-archive.');
+    } finally {
+      setAutoArchiving(false);
+    }
+  };
 
   const filteredBookings = useMemo(() => {
     const now = new Date();
@@ -174,8 +232,34 @@ const DashboardPage: React.FC = () => {
             </div>
           )}
 
+          {autoArchiveNotice && (
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 flex items-center justify-between text-xs font-bold shadow-sm">
+              <div className="flex items-center gap-2">
+                <span className="text-amber-600 text-sm">⚡</span>
+                <span>{autoArchiveNotice}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                {viewMode !== 'archived' && (
+                  <button 
+                    onClick={() => setViewMode('archived')}
+                    className="text-[10px] uppercase font-black tracking-wider text-amber-900 bg-amber-200/80 hover:bg-amber-200 px-2.5 py-1 rounded-lg transition-colors"
+                  >
+                    View Archive
+                  </button>
+                )}
+                <button 
+                  onClick={() => setAutoArchiveNotice(null)}
+                  className="text-amber-500 hover:text-amber-800 p-1 font-black text-sm"
+                  aria-label="Dismiss"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+          )}
+
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 lg:gap-8">
-            <div className="flex items-center gap-4 lg:gap-8">
+            <div className="flex flex-wrap items-center gap-3 lg:gap-6">
               <h2 className="text-2xl lg:text-4xl font-black text-slate-900 tracking-tight">Orders</h2>
               <div className="bg-slate-100 p-1 lg:p-1.5 rounded-xl lg:rounded-2xl flex lg:gap-1.5">
                  <button 
@@ -191,6 +275,15 @@ const DashboardPage: React.FC = () => {
                   Archive
                 </button>
               </div>
+              <button 
+                onClick={handleManualAutoArchive}
+                disabled={autoArchiving}
+                title="Auto-archive checked-in orders older than 7 days past scheduled pickup"
+                className="px-2.5 py-1.5 lg:px-4 lg:py-2.5 text-[8px] lg:text-[10px] font-black uppercase tracking-widest rounded-lg lg:rounded-xl bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-200/70 transition-all disabled:opacity-50 flex items-center gap-1.5"
+              >
+                <span>⚡</span>
+                <span>{autoArchiving ? 'Archiving...' : 'Run Auto-Archive (>7d)'}</span>
+              </button>
             </div>
             
             <div className="relative group w-full sm:w-auto">
@@ -271,7 +364,14 @@ const DashboardPage: React.FC = () => {
                       >
                         <td className="px-4 py-4 lg:px-10 lg:py-8 align-middle">
                           <span className="font-mono font-black text-slate-900 block text-xs lg:text-base mb-1">#{booking.bookingRef}</span>
-                          <StatusBadge status={booking.status} />
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <StatusBadge status={booking.status} />
+                            {booking.autoArchived && (
+                              <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-800 border border-amber-200/80 text-[8px] lg:text-[9px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-tighter">
+                                ⚡ Auto-Archived
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="px-4 py-4 lg:px-10 lg:py-8 align-middle">
                           <p className="font-black text-slate-900 text-xs lg:text-base mb-0.5 truncate">{booking.customer.name}</p>

@@ -38,6 +38,9 @@ export interface Booking {
   notes: string;
   address?: string; // Restore optional field
   walletIssued: boolean;
+  autoArchived?: boolean;
+  archivedReason?: string;
+  pickedUpBy?: string;
 }
 
 export interface AdminUser {

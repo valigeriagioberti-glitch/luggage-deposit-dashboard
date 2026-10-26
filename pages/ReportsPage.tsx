@@ -77,6 +77,8 @@ const ReportsPage: React.FC = () => {
             status: data.status,
             notes: data.notes ?? data.dropOff?.notes ?? "",
             walletIssued: Boolean(data.walletIssued ?? false),
+            autoArchived: Boolean(data.autoArchived ?? false),
+            archivedReason: String(data.archivedReason ?? ""),
             _isArchive: isArchive
           };
         });
@@ -131,6 +133,30 @@ const ReportsPage: React.FC = () => {
       }
     };
   }, [activeBookings, archivedBookings, mode, selectedDate]);
+
+  const handleAutoArchiveCheckedIn = async () => {
+    if (!window.confirm("Auto-archive all checked-in bookings where scheduled pickup was more than 7 days ago?")) return;
+    setArchiving(true);
+    setArchiveStatus({message: '', type: null});
+    try {
+      const response = await fetch('/api/archive/auto-archive', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ days: 7, adminEmail: auth.currentUser?.email || 'admin_reports' })
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setArchiveStatus({message: data.message || `Success! Auto-archived ${data.count} bookings.`, type: 'success'});
+        fetchAllData();
+      } else {
+        setArchiveStatus({message: data.error || 'Auto-archive failed.', type: 'error'});
+      }
+    } catch (err) {
+      setArchiveStatus({message: 'Network error.', type: 'error'});
+    } finally {
+      setArchiving(false);
+    }
+  };
 
   const handleArchiveAll = async () => {
     if (!window.confirm("Archive all checked-out bookings older than 7 days?")) return;
@@ -232,16 +258,54 @@ const ReportsPage: React.FC = () => {
            </div>
         </div>
 
-        <div className="bg-orange-50 border border-orange-100 rounded-3xl lg:rounded-[5rem] p-8 lg:p-24">
-           <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 lg:gap-16">
-              <div className="max-w-3xl">
-                 <h3 className="text-orange-900 font-black text-xl lg:text-4xl mb-1 lg:mb-6">Database Maintenance</h3>
-                 <p className="text-orange-700 text-sm lg:text-2xl opacity-80 leading-relaxed">Archive legacy picked-up data to keep the system fast.</p>
+        <div className="bg-orange-50 border border-orange-100 rounded-3xl lg:rounded-[4rem] p-6 lg:p-16">
+           <div className="flex flex-col gap-6">
+              <div>
+                 <h3 className="text-orange-900 font-black text-xl lg:text-3xl mb-1 lg:mb-2 flex items-center gap-2">
+                   <span>⚡</span> Database Maintenance & Archiving
+                 </h3>
+                 <p className="text-orange-700 text-sm lg:text-lg opacity-80 leading-relaxed">
+                   Archive legacy or overdue bookings to keep active storage lists fast and current.
+                 </p>
               </div>
-              <button onClick={handleArchiveAll} disabled={archiving} className="px-8 py-4 lg:px-20 lg:py-10 bg-orange-600 text-white rounded-2xl lg:rounded-[3rem] font-black lg:text-3xl hover:bg-orange-700 transition-all disabled:opacity-50 shadow-xl whitespace-nowrap">{archiving ? 'Processing...' : 'Run Catch-up Archive'}</button>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-8 pt-2">
+                <div className="bg-white/80 p-5 lg:p-8 rounded-2xl border border-orange-200/60 flex flex-col justify-between gap-4">
+                  <div>
+                    <h4 className="font-black text-slate-900 text-sm lg:text-lg">Auto-Archive Overdue Checked-In Bookings</h4>
+                    <p className="text-slate-500 text-xs lg:text-sm mt-1">
+                      Moves bookings that are still marked <strong>In Storage (Checked In)</strong> to archive if <strong>7+ days</strong> have elapsed since their scheduled pickup date.
+                    </p>
+                  </div>
+                  <button 
+                    onClick={handleAutoArchiveCheckedIn} 
+                    disabled={archiving} 
+                    className="w-full py-3 lg:py-4 bg-orange-600 text-white rounded-xl lg:rounded-2xl font-black text-xs lg:text-base hover:bg-orange-700 transition-all disabled:opacity-50 shadow-md"
+                  >
+                    {archiving ? 'Processing...' : 'Run Auto-Archive (Checked In > 7 Days)'}
+                  </button>
+                </div>
+
+                <div className="bg-white/80 p-5 lg:p-8 rounded-2xl border border-orange-200/60 flex flex-col justify-between gap-4">
+                  <div>
+                    <h4 className="font-black text-slate-900 text-sm lg:text-lg">Archive Picked-Up History</h4>
+                    <p className="text-slate-500 text-xs lg:text-sm mt-1">
+                      Archives completed bookings that have already been <strong>Picked Up</strong> more than 7 days ago.
+                    </p>
+                  </div>
+                  <button 
+                    onClick={handleArchiveAll} 
+                    disabled={archiving} 
+                    className="w-full py-3 lg:py-4 bg-slate-900 text-white rounded-xl lg:rounded-2xl font-black text-xs lg:text-base hover:bg-black transition-all disabled:opacity-50 shadow-md"
+                  >
+                    {archiving ? 'Processing...' : 'Archive Picked-Up History (> 7 Days)'}
+                  </button>
+                </div>
+              </div>
            </div>
+
            {archiveStatus.type && (
-             <div className={`mt-6 lg:mt-16 p-4 lg:p-12 rounded-2xl lg:rounded-[3rem] text-sm lg:text-2xl font-black uppercase tracking-[0.2em] text-center ${archiveStatus.type === 'success' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
+             <div className={`mt-6 p-4 lg:p-8 rounded-2xl text-xs lg:text-base font-black uppercase tracking-wider text-center ${archiveStatus.type === 'success' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}`}>
                 {archiveStatus.message}
              </div>
            )}

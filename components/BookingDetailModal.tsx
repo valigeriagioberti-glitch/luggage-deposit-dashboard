@@ -131,6 +131,11 @@ const BookingDetailModal: React.FC<BookingDetailModalProps> = ({ booking, onClos
             <div className="flex items-center gap-2">
               <h2 className="text-xl font-black text-slate-900">#{booking.bookingRef}</h2>
               {isArchived && <span className="bg-slate-900 text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest">Archive</span>}
+              {booking.autoArchived && (
+                <span className="bg-amber-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest flex items-center gap-1 shadow-sm">
+                  ⚡ Auto-Archived
+                </span>
+              )}
             </div>
             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Guest Information</p>
           </div>
@@ -146,7 +151,9 @@ const BookingDetailModal: React.FC<BookingDetailModalProps> = ({ booking, onClos
           <div className="bg-slate-900 rounded-3xl p-6 text-white shadow-lg">
              <div className="flex justify-between items-start mb-4">
                 <StatusBadge status={booking.status} />
-                <p className="text-[10px] font-black opacity-50 uppercase tracking-widest">Deposit Active</p>
+                <p className="text-[10px] font-black opacity-50 uppercase tracking-widest">
+                  {booking.autoArchived ? 'Auto-Archived (7d Overdue)' : isArchived ? 'Archived Record' : 'Deposit Active'}
+                </p>
              </div>
              <h3 className="text-xl font-black mb-1 truncate">{booking.customer.name}</h3>
              
@@ -165,6 +172,17 @@ const BookingDetailModal: React.FC<BookingDetailModalProps> = ({ booking, onClos
              </div>
           </div>
 
+          {/* Auto-archive explanation note */}
+          {booking.autoArchived && (
+            <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl text-amber-900 text-xs font-medium flex items-start gap-3">
+              <span className="text-amber-600 text-base">⚡</span>
+              <div>
+                <p className="font-black text-amber-950 uppercase tracking-wider text-[10px] mb-0.5">Auto-Archived Policy</p>
+                <p>{booking.archivedReason || 'This booking was checked in and automatically archived because 7 days passed without a check-out after the scheduled pickup date.'}</p>
+              </div>
+            </div>
+          )}
+
           {/* Logistics Grid */}
           <div className="grid grid-cols-2 gap-3">
             <div className="p-4 bg-blue-50/50 rounded-2xl border border-blue-100/50">
@@ -182,11 +200,17 @@ const BookingDetailModal: React.FC<BookingDetailModalProps> = ({ booking, onClos
           {booking.pickedUpAt && (
             <div className="p-4 bg-slate-900 rounded-2xl border border-slate-800 text-white flex justify-between items-center">
               <div>
-                <p className="text-[8px] font-black text-emerald-400 uppercase tracking-widest mb-1">Actual Pick-up</p>
-                <p className="font-black text-sm">{new Date(booking.pickedUpAt.seconds * 1000).toLocaleDateString('it-IT', { timeZone: 'Europe/Rome' })}</p>
+                <p className="text-[8px] font-black text-emerald-400 uppercase tracking-widest mb-1">
+                  {booking.autoArchived ? 'Archived At' : 'Actual Pick-up'}
+                </p>
+                <p className="font-black text-sm">
+                  {new Date(booking.pickedUpAt.seconds ? booking.pickedUpAt.seconds * 1000 : booking.pickedUpAt).toLocaleDateString('it-IT', { timeZone: 'Europe/Rome' })}
+                </p>
               </div>
               <div className="text-right">
-                <p className="text-xl font-black text-emerald-400">{new Date(booking.pickedUpAt.seconds * 1000).toLocaleTimeString('it-IT', { timeZone: 'Europe/Rome', hour: '2-digit', minute:'2-digit' })}</p>
+                <p className="text-xl font-black text-emerald-400">
+                  {new Date(booking.pickedUpAt.seconds ? booking.pickedUpAt.seconds * 1000 : booking.pickedUpAt).toLocaleTimeString('it-IT', { timeZone: 'Europe/Rome', hour: '2-digit', minute:'2-digit' })}
+                </p>
               </div>
             </div>
           )}
