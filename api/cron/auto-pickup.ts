@@ -29,26 +29,36 @@ export default async function handler(req: any, res: any) {
     let batch = db.batch();
     let opCount = 0;
 
-    // 1. Auto-archive bookings that were checked in but not checked out 7 days after scheduled pickup
-    const checkedInSnap = await db.collection('bookings')
-      .where('status', '==', 'checked_in')
-      .get();
+    // 1. Auto-archive any active bookings where 7 days have passed after scheduled pickup
+    const activeBookingsSnap = await db.collection('bookings').get();
 
-    for (const doc of checkedInSnap.docs) {
+    for (const doc of activeBookingsSnap.docs) {
       const data = doc.data();
       const pickupDate = parseScheduledPickupDate(data);
 
       if (pickupDate && (now.getTime() - pickupDate.getTime()) >= sevenDaysMs) {
         const archiveRef = db.collection('bookings_archive').doc(doc.id);
+        const originalStatus = data.status || 'paid';
+        const finalStatus = originalStatus === 'cancelled' ? 'cancelled' : 'picked_up';
+
+        let reason = `Auto-archived: 7+ days past scheduled pickup (${pickupDate.toLocaleDateString('it-IT')})`;
+        if (originalStatus === 'checked_in') {
+          reason = `Auto-archived: Checked in but not checked out after 7 days from scheduled pickup (${pickupDate.toLocaleDateString('it-IT')})`;
+        } else if (originalStatus === 'paid') {
+          reason = `Auto-archived: Not checked in after 7 days from scheduled pickup (${pickupDate.toLocaleDateString('it-IT')})`;
+        } else if (originalStatus === 'cancelled') {
+          reason = `Auto-archived: Cancelled booking past 7 days from scheduled pickup (${pickupDate.toLocaleDateString('it-IT')})`;
+        }
+
         batch.set(archiveRef, {
           ...data,
-          status: 'picked_up',
-          pickedUpAt: data.pickedUpAt || FieldValue.serverTimestamp(),
+          status: finalStatus,
+          pickedUpAt: data.pickedUpAt || (finalStatus === 'picked_up' ? FieldValue.serverTimestamp() : null),
           updatedAt: FieldValue.serverTimestamp(),
           archivedAt: FieldValue.serverTimestamp(),
-          pickedUpBy: 'system_auto_archive',
+          pickedUpBy: data.pickedUpBy || 'system_auto_archive',
           autoArchived: true,
-          archivedReason: `Auto-archived: Checked in but not checked out after 7 days from scheduled pickup (${pickupDate.toLocaleDateString('it-IT')})`
+          archivedReason: reason
         });
         batch.delete(doc.ref);
         opCount += 2;
@@ -96,7 +106,7 @@ export default async function handler(req: any, res: any) {
       archivedCheckedInCount,
       archivedPickedUpCount,
       totalArchived: archivedCheckedInCount + archivedPickedUpCount,
-      message: `Auto-archived ${archivedCheckedInCount} overdue checked-in bookings (7+ days) and ${archivedPickedUpCount} picked-up bookings.`
+      message: `Auto-archived ${archivedCheckedInCount} overdue bookings (7+ days past pickup) and ${archivedPickedUpCount} picked-up bookings.`
     });
 
   } catch (err: any) {

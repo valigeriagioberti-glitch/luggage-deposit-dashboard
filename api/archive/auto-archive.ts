@@ -74,17 +74,15 @@ export default async function handler(req: any, res: any) {
     const now = new Date();
     const cutoffMs = days * 24 * 60 * 60 * 1000;
 
-    // Find all bookings that are currently checked_in
-    const checkedInSnap = await db.collection('bookings')
-      .where('status', '==', 'checked_in')
-      .get();
+    // Find all active bookings
+    const activeBookingsSnap = await db.collection('bookings').get();
 
-    if (checkedInSnap.empty) {
+    if (activeBookingsSnap.empty) {
       return res.status(200).json({
         success: true,
         count: 0,
         checkedCount: 0,
-        message: 'No checked-in bookings found.'
+        message: 'No active bookings found.'
       });
     }
 
@@ -93,7 +91,7 @@ export default async function handler(req: any, res: any) {
     let archivedCount = 0;
     const archivedRefs: string[] = [];
 
-    for (const doc of checkedInSnap.docs) {
+    for (const doc of activeBookingsSnap.docs) {
       const data = doc.data();
       const pickupDate = parseScheduledPickupDate(data);
 
@@ -105,16 +103,27 @@ export default async function handler(req: any, res: any) {
       const timeSincePickup = now.getTime() - pickupDate.getTime();
       if (timeSincePickup >= cutoffMs) {
         const archiveRef = db.collection('bookings_archive').doc(doc.id);
+        const originalStatus = data.status || 'paid';
+        const finalStatus = originalStatus === 'cancelled' ? 'cancelled' : 'picked_up';
+
+        let reason = `Auto-archived: 7+ days past scheduled pickup (${pickupDate.toLocaleDateString('it-IT')})`;
+        if (originalStatus === 'checked_in') {
+          reason = `Auto-archived: Checked in but not checked out after ${days} days from scheduled pickup (${pickupDate.toLocaleDateString('it-IT')})`;
+        } else if (originalStatus === 'paid') {
+          reason = `Auto-archived: Not checked in after ${days} days from scheduled pickup (${pickupDate.toLocaleDateString('it-IT')})`;
+        } else if (originalStatus === 'cancelled') {
+          reason = `Auto-archived: Cancelled booking past ${days} days from scheduled pickup (${pickupDate.toLocaleDateString('it-IT')})`;
+        }
         
         batch.set(archiveRef, {
           ...data,
-          status: 'picked_up', // Marked as picked_up in archive
-          pickedUpAt: data.pickedUpAt || FieldValue.serverTimestamp(),
+          status: finalStatus,
+          pickedUpAt: data.pickedUpAt || (finalStatus === 'picked_up' ? FieldValue.serverTimestamp() : null),
           archivedAt: FieldValue.serverTimestamp(),
           updatedAt: FieldValue.serverTimestamp(),
-          pickedUpBy: adminEmail,
+          pickedUpBy: data.pickedUpBy || adminEmail,
           autoArchived: true,
-          archivedReason: `Auto-archived: Checked in but not checked out after ${days} days from scheduled pickup (${pickupDate.toLocaleDateString('it-IT')})`
+          archivedReason: reason
         });
 
         batch.delete(doc.ref);
@@ -138,9 +147,9 @@ export default async function handler(req: any, res: any) {
     return res.status(200).json({
       success: true,
       count: archivedCount,
-      checkedCount: checkedInSnap.size,
+      checkedCount: activeBookingsSnap.size,
       archivedBookings: archivedRefs,
-      message: `Successfully auto-archived ${archivedCount} booking(s) checked in and 7+ days past scheduled pickup.`
+      message: `Successfully auto-archived ${archivedCount} booking(s) 7+ days past scheduled pickup.`
     });
 
   } catch (err: any) {

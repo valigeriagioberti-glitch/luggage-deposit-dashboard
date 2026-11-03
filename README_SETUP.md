@@ -31,10 +31,10 @@ Ensure the rules in `firestore.rules` are published to your Firebase project. Th
 - Only authenticated users found in the `admins` collection can read/write data.
 - The `active` flag must be `true`.
 
-## 4. Automatic Archiving (7-Day Checked-In Rule)
-Bookings that have been **checked in** (`status: 'checked_in'`) but have **not been checked out** after **seven days** have passed from their scheduled pickup date are automatically archived:
+## 4. Automatic Archiving (7-Day Pickup Rule)
+Bookings that have gone past **seven days after their scheduled pickup date** are automatically archived, **even if they were not checked in**:
 - **Moved**: Transferred from `bookings` to `bookings_archive`.
-- **Status in Archive**: Updated to `picked_up` with `autoArchived: true` and `archivedReason` recorded.
+- **Status in Archive**: Updated to `picked_up` (or preserved if cancelled), with `autoArchived: true` and an explicit `archivedReason` detailing whether it was checked-in or not checked-in (paid).
 - **Trigger Methods**:
   1. **Automatic in Dashboard**: When an admin opens the dashboard, an automated background check checks for and auto-archives eligible overdue bookings.
   2. **Cron / Webhook Endpoint**: Call `GET` or `POST` `/api/cron/auto-archive` (or `/api/cron/auto-pickup` or `/api/archive/auto-archive`).

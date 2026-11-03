@@ -135,7 +135,7 @@ const ReportsPage: React.FC = () => {
   }, [activeBookings, archivedBookings, mode, selectedDate]);
 
   const handleAutoArchiveCheckedIn = async () => {
-    if (!window.confirm("Auto-archive all checked-in bookings where scheduled pickup was more than 7 days ago?")) return;
+    if (!window.confirm("Auto-archive all bookings where scheduled pickup was more than 7 days ago (including not checked in)?")) return;
     setArchiving(true);
     setArchiveStatus({message: '', type: null});
     try {
@@ -272,9 +272,9 @@ const ReportsPage: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-8 pt-2">
                 <div className="bg-white/80 p-5 lg:p-8 rounded-2xl border border-orange-200/60 flex flex-col justify-between gap-4">
                   <div>
-                    <h4 className="font-black text-slate-900 text-sm lg:text-lg">Auto-Archive Overdue Checked-In Bookings</h4>
+                    <h4 className="font-black text-slate-900 text-sm lg:text-lg">Auto-Archive Overdue Bookings (7+ Days)</h4>
                     <p className="text-slate-500 text-xs lg:text-sm mt-1">
-                      Moves bookings that are still marked <strong>In Storage (Checked In)</strong> to archive if <strong>7+ days</strong> have elapsed since their scheduled pickup date.
+                      Moves bookings to archive if <strong>7+ days</strong> have elapsed since their scheduled pickup date, whether checked in, not checked in (paid), or completed.
                     </p>
                   </div>
                   <button 
@@ -282,7 +282,7 @@ const ReportsPage: React.FC = () => {
                     disabled={archiving} 
                     className="w-full py-3 lg:py-4 bg-orange-600 text-white rounded-xl lg:rounded-2xl font-black text-xs lg:text-base hover:bg-orange-700 transition-all disabled:opacity-50 shadow-md"
                   >
-                    {archiving ? 'Processing...' : 'Run Auto-Archive (Checked In > 7 Days)'}
+                    {archiving ? 'Processing...' : 'Run Auto-Archive (Overdue 7+ Days)'}
                   </button>
                 </div>
 

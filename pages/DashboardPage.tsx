@@ -141,7 +141,7 @@ const DashboardPage: React.FC = () => {
         if (res.ok) {
           const data = await res.json();
           if (data.count > 0) {
-            setAutoArchiveNotice(`Auto-archived ${data.count} order(s) checked in > 7 days past scheduled pickup.`);
+            setAutoArchiveNotice(`Auto-archived ${data.count} order(s) > 7 days past scheduled pickup.`);
           }
         }
       } catch (e) {
@@ -278,7 +278,7 @@ const DashboardPage: React.FC = () => {
               <button 
                 onClick={handleManualAutoArchive}
                 disabled={autoArchiving}
-                title="Auto-archive checked-in orders older than 7 days past scheduled pickup"
+                title="Auto-archive orders older than 7 days past scheduled pickup"
                 className="px-2.5 py-1.5 lg:px-4 lg:py-2.5 text-[8px] lg:text-[10px] font-black uppercase tracking-widest rounded-lg lg:rounded-xl bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-200/70 transition-all disabled:opacity-50 flex items-center gap-1.5"
               >
                 <span>⚡</span>
